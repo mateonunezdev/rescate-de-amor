@@ -1,0 +1,398 @@
+import Player from '../entities/Player.js?v=20260819-final-world-14';
+import UIManager from '../ui/UIManager.js';
+import AudioManager from '../systems/AudioManager.js';
+import ParticleManager from '../systems/ParticleManager.js';
+import { gameState } from '../config.js';
+import { TextureFactory } from '../utils/TextureFactory.js?v=20260819-combat-final-15';
+
+export default class BossScene extends Phaser.Scene {
+  constructor() {
+    super('BossScene');
+  }
+
+  create() {
+    this.audioManager = new AudioManager(this);
+    this.audioManager.playMusic('bossMusic');
+    this.cameras.main.setBackgroundColor('#0a0509');
+
+    // Create textures
+    TextureFactory.createPlayerTexture(this);
+    TextureFactory.createBossTexture(this);
+    TextureFactory.createMateoTexture(this);
+    TextureFactory.createEnemyTexture(this,'pigeon');TextureFactory.createCombatTextures(this);
+
+    this.createBossArena();
+
+    // Ground
+    const ground = this.add.rectangle(this.scale.width / 2, this.scale.height - 60, this.scale.width, 50, 0x3b2a4a, 1);
+    this.physics.add.existing(ground, true);
+
+    // Player
+    this.player = new Player(this, 150, 540);
+    this.player.canChargeLove=(gameState.memories||[]).includes('card3')||!!gameState.chargedUnlocked;
+    this.physics.add.collider(this.player, ground);
+    this.player.body.setCollideWorldBounds(true);
+    this.player.maxHealth = 7;
+    this.player.health = 7;
+    this.player.setDepth(20);
+    this.player.maxHealth = gameState.maxHealth || 6;
+    this.player.health = this.player.maxHealth;
+    this.loveShots = this.physics.add.group({ allowGravity: false });
+
+    // Boss setup
+    this.boss = this.add.image(1025, 335, 'pecho-final',0).setScale(1.08);
+    this.bossHasFinalArt=true;
+    this.physics.add.existing(this.boss, false);
+    this.boss.body.setAllowGravity(false);
+    this.boss.body.setImmovable(true);
+    this.boss.setDepth(15);
+    this.bossAura = this.add.ellipse(this.boss.x, this.boss.y, 155,205, 0xd33c9c, 0.09).setDepth(14);
+    this.bossBirds = [];
+    for (let i=0;i<3;i++) { const bird=this.add.image(this.boss.x,this.boss.y,'enemy-pigeon').setScale(1.5).setDepth(16);this.bossBirds.push(bird); }
+
+    this.bossHealth = 36;
+    this.bossMaxHealth = 36;
+    this.displayedBossHealth = 36;
+    this.phase = 1;
+    this.phaseThreshold1 = 24;
+    this.phaseThreshold2 = 12;
+    this.lastAnnouncedPhase = 1;
+
+    // UI & Audio
+    this.uiManager = new UIManager(this);
+    this.particleManager = new ParticleManager(this);
+
+    // Boss health bar
+    this.createHealthBar();
+
+    // Boss title
+    this.add.text(this.scale.width / 2, 116, 'REINA DE LAS PALOMAS', {
+      fontFamily: 'monospace',
+      fontSize: '17px',
+      color: '#ff69b4',
+      fontStyle: 'bold',
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(100);
+
+    this.mateo=this.add.image(1160,475,'mateo-final',1).setScale(.8).setDepth(12);
+    this.cell=this.add.container(1160,470).setDepth(18);this.cell.add(this.add.rectangle(0,0,130,175,0x11101a,.16).setStrokeStyle(9,0x595265));for(let i=-2;i<=2;i++)this.cell.add(this.add.rectangle(i*25,0,6,165,0x272532).setStrokeStyle(2,0x777080));this.add.text(1160,575,'MATEO',{fontFamily:'monospace',fontSize:'13px',color:'#ffe8c4',backgroundColor:'#211327',padding:{x:6,y:3}}).setOrigin(.5).setDepth(20);
+
+    // Attack patterns
+    this.attackTimer = 0;this.bossInvulnerable=0;
+    this.attackCooldown = 1200;
+    this.bossMoving = false;
+    this.projectiles = [];
+    this.physics.add.overlap(this.loveShots, this.boss, (shot) => { const damage=shot.damage||1;shot.destroy();for(let i=0;i<damage;i++){this.bossInvulnerable=0;this.handlePlayerAttack();} });
+
+    // Input
+    this.cursors = this.input.keyboard.createCursorKeys();
+    this.keys = this.input.keyboard.addKeys('A,D,SPACE,X');
+    this.add.text(640,655,'X — IMPULSO DE AMOR',{fontFamily:'monospace',fontSize:'18px',color:'#fff0c4',backgroundColor:'#682453',padding:{x:14,y:8}}).setOrigin(.5).setDepth(110).setAlpha(.95);
+    this.showBossIntro();
+
+  }
+
+  showBossIntro(){
+    this.combatStarted=false;
+    this.bossIntroElapsed=0;
+    this.bossIntroStep=0;
+    this.bossIntroPanel=this.add.rectangle(640,360,900,190,0x140b20,.94).setStrokeStyle(5,0xd09a60).setDepth(180);
+    this.bossIntroText=this.add.text(640,360,'MATEO: “¡Paola!”\nPAOLA: “¡Mateo!”',{fontFamily:'monospace',fontSize:'25px',color:'#ffe9ce',align:'center',lineSpacing:9}).setOrigin(.5).setDepth(181);
+    this.bossIntroLines=[
+      'PECHO PALOMA: “Vaya… de verdad llegaste hasta aquí.”\nPAOLA: “Déjalo ir.”',
+      'PECHO PALOMA: “¿Después de todo esto? Ni hablar.”\nPAOLA: “Entonces tendré que obligarte.”',
+      'JEFE FINAL\n♛ PECHO PALOMA ♛\nREINA DE LAS PALOMAS\n\n3 · 2 · 1 · COMBATE',
+    ];
+  }
+
+  updateBossIntro(delta){
+    this.bossIntroElapsed+=delta;
+    const elapsed=this.bossIntroElapsed;
+    const nextStep=Math.min(3,Math.floor(elapsed/950));
+    if(nextStep>this.bossIntroStep){this.bossIntroStep=nextStep;this.bossIntroText.setText(this.bossIntroLines[nextStep-1]);}
+    if(elapsed>=3900){this.bossIntroPanel.destroy();this.bossIntroText.destroy();this.combatStarted=true;this.attackTimer=0;}
+  }
+
+  createHealthBar() {
+    const bg = this.add.rectangle(690, 72, 460, 28, 0x34172f, .96);
+    bg.setScrollFactor(0).setDepth(99);
+    bg.setStrokeStyle(2, 0xff69b4, 1);
+
+    this.healthBarBg = bg;
+    this.healthFill = this.add.rectangle(465, 72, 450, 18, 0xd8478c, 1);
+    this.healthFill.setOrigin(0,0.5);
+    this.healthFill.setScrollFactor(0).setDepth(99);
+
+    const label = this.add.text(690, 38, '♛  PECHO PALOMA  ♛\nREINA DE LAS PALOMAS', {
+      fontFamily: 'monospace',
+      fontSize: '19px',
+      color: '#ffe3a1',
+      align:'center',lineSpacing:3,
+    }).setOrigin(0.5).setScrollFactor(0).setDepth(99);
+  }
+
+  updateHealthBar() {
+    const percent = Math.max(0, this.displayedBossHealth / this.bossMaxHealth);
+    this.healthFill.displayWidth = 450 * percent;
+    this.healthFill.x = 465;
+
+    // Change color based on health
+    if (percent > 0.66) {
+      this.healthFill.setFillStyle(0x69ff69);
+    } else if (percent > 0.33) {
+      this.healthFill.setFillStyle(0xffff69);
+    } else {
+      this.healthFill.setFillStyle(0xff6969);
+    }
+  }
+
+  createBossArena() {
+    this.add.image(640,360,'bg-boss').setDisplaySize(1280,720).setDepth(-20);
+    this.add.rectangle(640,360,1280,720,0x100818,.12).setDepth(-19);
+    for(let i=0;i<34;i++){const petal=this.add.ellipse(Math.random()*1280,120+Math.random()*520,3,7,i%2?0xff85b4:0xffd0df,.55).setDepth(7).setAngle(Math.random()*180);this.tweens.add({targets:petal,x:petal.x-100-Math.random()*180,y:petal.y+35,angle:petal.angle+180,duration:2600+Math.random()*2400,repeat:-1});}
+    this.add.rectangle(640,625,1280,90,0x130f19,.3).setDepth(2);
+  }
+
+  updateBossPhase() {
+    if (this.bossHealth <= this.phaseThreshold2) {
+      this.phase = 3;
+    } else if (this.bossHealth <= this.phaseThreshold1) {
+      this.phase = 2;
+    } else {
+      this.phase = 1;
+    }
+    if (this.phase !== this.lastAnnouncedPhase) {
+      this.lastAnnouncedPhase = this.phase;
+      const line = this.phase === 2 ? 'PECHO PALOMA: “¡Él debería estar conmigo!”\nPAOLA: “El amor no se obliga.”' : 'PECHO PALOMA: “¡Entonces te quedarás aquí también!”\nPAOLA: “Esto termina ahora.”';
+      this.uiManager.showMessage(line, '#ffe0ef', 2600);
+    }
+  }
+
+  bossPhasedMovement() {
+    const targetX = 1025;
+    const bobAmount = 20 + this.phase * 10;
+    const bobSpeed = 600 - this.phase * 100;
+    this.boss.y = 335 + Math.sin((this.time.now / bobSpeed)) * Math.min(12,bobAmount);
+    this.bossAura.setPosition(this.boss.x,this.boss.y).setScale(1+Math.sin(this.time.now/240)*.08);
+    this.bossBirds.forEach((b,i)=>b.setPosition(this.boss.x+Math.cos(this.time.now/500+i*2.1)*88,this.boss.y+Math.sin(this.time.now/500+i*2.1)*55));
+  }
+
+  performBossAttack() {
+    const warning=this.add.text(this.boss.x-120,this.boss.y+105,this.phase===1?'¡BANDADA!':this.phase===2?'¡BESO HIPNÓTICO!':'¡CORAZÓN VACÍO!',{fontFamily:'monospace',fontSize:'15px',color:'#fff0a8',backgroundColor:'#621c56',padding:{x:8,y:5}}).setOrigin(.5).setDepth(80);
+    this.tweens.add({targets:warning,alpha:0,duration:650,onComplete:()=>warning.destroy()});
+    const phase=this.phase;this.attackCycle=(this.attackCycle||0)+1;
+    if(phase===1)this.attackPattern1();else if(phase===2&&this.attackCycle%3===0)this.attackPatternFeathers();else if(phase===2)this.attackPattern2();else this.attackPattern3();
+    this.bossFrameResetIn=520;
+  }
+
+  attackPattern1() {
+    if(this.bossHasFinalArt)this.boss.setFrame(2);
+    // Pigeon flock attack
+    const pigeonCount = 4;
+    for (let i = 0; i < pigeonCount; i++) {
+      const projectile = this.add.image(this.boss.x-60,this.boss.y+(i-pigeonCount/2)*48,'enemy-pigeon').setScale(1.65);
+      this.physics.add.existing(projectile, false);
+      projectile.body.setAllowGravity(false);
+      projectile.body.setVelocityX(-300 - i * 20);
+
+      this.physics.add.overlap(this.player, projectile, () => {
+        this.onBossDamagePlayer(projectile);
+      });
+
+      this.projectiles.push(projectile);
+    }
+
+    this.audioManager.playSfx('attack');
+  }
+
+  attackPattern2() {
+    if(this.bossHasFinalArt)this.boss.setFrame(3);
+    // Heart projectiles (phase 2)
+    const heartCount = 6;
+    for (let i = 0; i < heartCount; i++) {
+      const angle = (i / heartCount) * Math.PI - Math.PI / 2;
+      const projectile = this.add.image(this.boss.x-40,this.boss.y,'kiss-shot').setScale(1.2);
+      this.physics.add.existing(projectile, false);
+      projectile.body.setAllowGravity(false);
+      const speed = 200;
+      projectile.body.setVelocity(
+        Math.cos(angle) * speed - 150,
+        Math.sin(angle) * speed
+      );
+
+      this.physics.add.overlap(this.player, projectile, () => {
+        this.onBossDamagePlayer(projectile);
+      });
+
+      this.projectiles.push(projectile);
+    }
+
+    this.audioManager.playSfx('bossHit');
+  }
+
+  attackPattern3() {
+    if(this.bossHasFinalArt)this.boss.setFrame(this.phase===3?5:4);
+    // Beam attack + pigeon swarm (phase 3)
+    this.cameras.main.shake(150, 0.01);
+
+    // Pigeon projectiles
+    for (let i = 0; i < 5; i++) {
+      const projectile = this.add.image(this.boss.x-40,this.boss.y+(i-2)*38,'enemy-pigeon').setScale(1.45).setTint(0xff9dcc);
+      this.physics.add.existing(projectile, false);
+      projectile.body.setAllowGravity(false);
+      projectile.body.setVelocityX(-350);
+
+      this.physics.add.overlap(this.player, projectile, () => {
+        this.onBossDamagePlayer(projectile);
+      });
+
+      this.projectiles.push(projectile);
+    }
+    const warning=this.add.rectangle(470,555,820,8,0xffd06b,.65).setOrigin(0,.5).setDepth(70);this.tweens.add({targets:warning,alpha:.15,duration:180,yoyo:true,repeat:2,onComplete:()=>{warning.destroy();if(this.defeated)return;const beam=this.add.rectangle(470,555,820,25,0xff4fa8,.78).setOrigin(0,.5).setDepth(70);this.physics.add.existing(beam,true);const hit=this.physics.add.overlap(this.player,beam,()=>this.player.takeDamage(1));this.cameras.main.shake(160,.006);this.tweens.add({targets:beam,alpha:0,scaleY:1.8,duration:320,onComplete:()=>{hit.destroy();beam.destroy();}});}});
+  }
+
+  attackPatternFeathers(){if(this.bossHasFinalArt)this.boss.setFrame(4);const lanes=[250,430,610,790,970];lanes.forEach((x,i)=>{if(i===this.attackCycle%lanes.length)return;const mark=this.add.ellipse(x,610,92,24,0xff5fae,.12).setStrokeStyle(3,0xffd0e6,.8).setDepth(69);this.tweens.add({targets:mark,alpha:1,scaleX:1.2,duration:420,yoyo:true,onComplete:()=>{mark.destroy();const feather=this.add.image(x,-20,'enemy-pigeon').setScale(.75).setTint(0xffc4e5).setAngle(90).setDepth(72);this.physics.add.existing(feather);feather.body.setAllowGravity(false);feather.body.setVelocityY(370);this.physics.add.overlap(this.player,feather,()=>this.onBossDamagePlayer(feather));this.projectiles.push(feather);}});});this.uiManager.showMessage('LLUVIA DE PLUMAS · ¡BUSCA EL ESPACIO SEGURO!','#ffe4f2',1300);}
+
+  onBossDamagePlayer(projectile) {
+    const x=projectile.x,y=projectile.y;
+    this.player.takeDamage(1);
+    projectile.destroy();
+    this.particleManager.burst(x, y, 0xff69b4, 10, 150);
+    this.projectiles = this.projectiles.filter(p => p !== projectile);
+  }
+
+  handlePlayerAttack() {
+      if(this.bossInvulnerable>0||this.defeated)return;this.bossInvulnerable=150;
+      this.bossHealth -= 1;
+      this.audioManager.playSfx('bossHit');
+      this.cameras.main.shake(100, 0.008);
+      this.particleManager.burst(this.boss.x, this.boss.y, 0xff69b4, 16, 200);
+      this.boss.setAlpha(0.7);
+      if(this.bossHasFinalArt)this.boss.setFrame(6);
+      this.boss.x += 7;
+      this.time.delayedCall(100, () => {this.boss.setAlpha(1);if(this.bossHasFinalArt)this.boss.setFrame(0);});
+      this.time.delayedCall(80, () => this.boss.active && (this.boss.x = 1025));
+
+      this.updateHealthBar();
+
+      if (this.bossHealth <= 0) {
+        this.defeatBoss();
+      }
+  }
+
+  fireLove(x, y, direction) {
+    const shot = this.add.image(x,y,'love-shot').setScale(1.15);
+    shot.damage=(gameState.memories||[]).includes('card2')?2:1;
+    this.physics.add.existing(shot);this.loveShots.add(shot);shot.body.setAllowGravity(false);
+    // In the arena Pecho Paloma flies above Paola. Aim the visible heart at her
+    // current position so the advertised attack can actually reach the boss.
+    const angle = Phaser.Math.Angle.Between(x, y, this.boss.x, this.boss.y);
+    shot.body.setVelocity(Math.cos(angle) * 560, Math.sin(angle) * 560);
+    shot.life=2200;
+    this.audioManager.playSfx('attack');
+  }
+
+  fireChargedLove(x,y,direction){const shot=this.add.image(x,y,'love-shot').setScale(2.35).setTint(0xffd4ef);this.physics.add.existing(shot);this.loveShots.add(shot);shot.damage=3;shot.life=2500;shot.body.setAllowGravity(false);const angle=Phaser.Math.Angle.Between(x,y,this.boss.x,this.boss.y);shot.body.setVelocity(Math.cos(angle)*470,Math.sin(angle)*470);this.particleManager.burst(x,y,0xff5bad,28,240);this.cameras.main.shake(140,.005);this.audioManager.playSfx('bossHit');}
+
+  defeatBoss() {
+    if (this.defeated) return;
+    this.defeated = true;
+    if(this.bossHasFinalArt)this.boss.setFrame(7);
+    this.bossHealth = 0;
+    this.updateHealthBar();
+
+    // Boss defeated animation
+    this.tweens.add({
+      targets: this.boss,
+      angle: 8,
+      y: 455,
+      duration: 1100,
+      ease: 'Cubic.easeIn',
+    });
+    const crown=this.add.text(this.boss.x,this.boss.y-75,'♛',{fontSize:'44px',color:'#f1c454'}).setOrigin(.5).setDepth(40);this.tweens.add({targets:crown,x:900,y:555,angle:160,duration:1100,ease:'Bounce.easeOut'});
+    this.uiManager.showMessage('PECHO PALOMA: “No… esto no puede estar pasando…”\nPAOLA: “El amor no se roba.”','#ffe2ef',2300);
+
+    // Victory particle burst
+    for (let i = 0; i < 3; i++) {
+      this.time.delayedCall(i * 200, () => {
+        this.particleManager.burst(
+          this.boss.x,
+          this.boss.y,
+          0xff69b4 + Math.random() * 0x100000,
+          20,
+          280
+        );
+      });
+    }
+
+    this.audioManager.playSfx('victory');
+    gameState.bossDefeated = true;
+    gameState.unlockedLevel = 5;
+    gameState.currentScene = 'EndingScene';
+    gameState.achievements = [...new Set([...(gameState.achievements || []), 'Reina derrotada', 'Sin miedo a las palomas'])];
+    localStorage.setItem('rescate-de-amor-save', JSON.stringify(gameState));
+    this.victoryTransitionIn=1500;
+  }
+
+  update(time, delta) {
+    if(this.defeated){this.victoryTransitionIn-=delta;if(!this.victoryFadeStarted&&this.victoryTransitionIn<=0){this.victoryFadeStarted=true;this.cameras.main.once('camerafadeoutcomplete',()=>this.scene.start('EndingScene'));this.cameras.main.fadeOut(800);}return;}
+    if (this.bossHealth <= 0) return;
+    if(!this.combatStarted){this.updateBossIntro(delta);return;}
+
+    this.player.update(time, delta);
+    this.bossInvulnerable=Math.max(0,this.bossInvulnerable-delta);
+    this.displayedBossHealth=Phaser.Math.Linear(this.displayedBossHealth,this.bossHealth,.12);this.updateHealthBar();
+
+    // Boss phase and movement
+    this.updateBossPhase();
+    this.bossPhasedMovement();
+    if(this.bossFrameResetIn){this.bossFrameResetIn-=delta;if(this.bossFrameResetIn<=0){this.bossFrameResetIn=0;if(this.bossHasFinalArt)this.boss.setFrame(0);}}
+
+    // Explicit proximity check avoids tunnelling and guarantees the readable
+    // heart projectile damages the airborne boss at its rendered position.
+    this.loveShots.getChildren().forEach(shot=>{
+      if(!shot.active)return;
+      shot.life-=delta;
+      if(shot.x>=this.boss.x-90||Phaser.Math.Distance.Between(shot.x,shot.y,this.boss.x,this.boss.y)<82){const damage=shot.damage||1;shot.destroy();for(let i=0;i<damage;i++){this.bossInvulnerable=0;this.handlePlayerAttack();}}
+      else if(shot.life<=0||shot.x>1380||shot.y<-80)shot.destroy();
+    });
+
+    // Boss attack timing
+    this.attackTimer += delta;
+    if (this.attackTimer >= this.attackCooldown) {
+      this.performBossAttack();
+      this.attackTimer = 0;
+      // Increase difficulty
+      this.attackCooldown = Math.max(600, this.attackCooldown - 50);
+    }
+
+    // Invulnerability flash
+    if (this.player.invulnerable > 0) {
+      this.player.invulnerable -= delta;
+      this.player.setAlpha(this.player.invulnerable % 100 < 50 ? 0.5 : 1);
+    } else {
+      this.player.setAlpha(1);
+    }
+
+    // Cleanup off-screen projectiles
+    this.projectiles = this.projectiles.filter(p => {
+      if (!p.active || p.x < -100) {
+        p.destroy();
+        return false;
+      }
+      return true;
+    });
+
+    // Player death
+    if (this.player.health <= 0) {
+      this.cameras.main.fadeOut(600);
+      this.time.delayedCall(600, () => {
+        this.scene.restart();
+      });
+    }
+
+    // Fallback restart
+    if (this.player.y > this.scale.height + 100) {
+      this.scene.restart();
+    }
+  }
+}
