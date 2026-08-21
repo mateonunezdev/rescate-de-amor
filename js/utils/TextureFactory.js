@@ -82,6 +82,16 @@ export class TextureFactory {
       gfx.fillStyle(0xf0c66b, 1); gfx.fillTriangle(5, 3, 8, 0, 10, 3); gfx.fillTriangle(13, 3, 16, 0, 19, 3);
       gfx.fillStyle(0xff5f9f, 1); gfx.fillRect(9, 20, 6, 5);
       gfx.generateTexture(key, 24, 40);
+    } else if (['soldier','archer','knight','mage','general'].includes(type)) {
+      const heavy=type==='knight'||type==='general',robe=type==='mage';
+      gfx.fillStyle(robe?0x743d8f:heavy?0x39445d:0x51405c,1);gfx.fillRoundedRect(8,20,30,42,5);
+      gfx.fillStyle(0xd9cfda,1);gfx.fillEllipse(23,15,15,13);gfx.fillStyle(0x2c2437,1);gfx.fillCircle(28,12,2);gfx.fillStyle(0xe6ad55,1);gfx.fillTriangle(36,15,46,19,36,21);
+      gfx.fillStyle(0xb9a6c8,1);gfx.fillTriangle(11,29,0,20,5,42);gfx.fillTriangle(36,29,48,20,42,42);
+      if(type==='archer'){gfx.lineStyle(3,0xe1b86a,1);gfx.strokeCircle(43,38,12);}
+      else if(type==='mage'){gfx.fillStyle(0xb860dc,1);gfx.fillCircle(42,35,6);gfx.fillRect(40,38,4,25);}
+      else{gfx.fillStyle(0xd8ad58,1);gfx.fillRect(41,24,3,39);gfx.fillTriangle(37,25,48,25,43,15);}
+      if(heavy){gfx.fillStyle(0xc9b46d,1);gfx.fillRoundedRect(2,30,13,25,4);}
+      gfx.fillStyle(0x242231,1);gfx.fillRect(11,60,10,9);gfx.fillRect(27,60,10,9);gfx.generateTexture(key,50,70);
     } else if (type === 'magic' || type === 'dive') {
       gfx.fillStyle(type === 'magic' ? 0xb879e8 : 0xd8d0e5, 1); gfx.fillEllipse(12, 11, 17, 11);
       gfx.fillStyle(0xf5eef8, 1); gfx.fillTriangle(7, 9, 0, 2, 3, 13); gfx.fillTriangle(16, 9, 24, 2, 21, 13);

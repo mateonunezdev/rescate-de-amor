@@ -1,12 +1,12 @@
-import Player from '../entities/Player.js?v=20260819-final-world-14';
-import Enemy from '../entities/Enemy.js';
+import Player from '../entities/Player.js?v=20260820-gameplay-expansion-23';
+import Enemy from '../entities/Enemy.js?v=20260820-gameplay-expansion-23';
 import Collectible from '../entities/Collectible.js';
 import UIManager from '../ui/UIManager.js?v=20260820-professional-final-22';
 import AudioManager from '../systems/AudioManager.js';
 import ParticleManager from '../systems/ParticleManager.js';
 import SaveManager from '../systems/SaveManager.js';
 import { gameState } from '../config.js';
-import { TextureFactory } from '../utils/TextureFactory.js?v=20260819-story-cards-21';
+import { TextureFactory } from '../utils/TextureFactory.js?v=20260820-gameplay-expansion-23';
 
 const MEMORY = {
   heart: ['CORAZÓN', 'Contigo, cada latido es especial.'],
@@ -41,21 +41,22 @@ export default class BaseLevelScene extends Phaser.Scene {
     this.projectiles = this.physics.add.group({ allowGravity: false });
     this.enemies = this.physics.add.group();
     this.dataDef.enemies.forEach(e => { const enemy = new Enemy(this, e.x, e.y, e); this.enemies.add(enemy); });
+    this.general=this.enemies.getChildren().find(e=>e.type==='general');if(this.general){this.generalMaxHealth=this.general.health;this.generalHud=this.add.container(640,128).setScrollFactor(0).setDepth(950);const gb=this.add.rectangle(0,0,360,46,0x1a1025,.94).setStrokeStyle(3,0xe4b75d);this.generalFill=this.add.rectangle(-166,12,332,10,0xc24983).setOrigin(0,.5);const gt=this.add.text(0,-9,'⚔ GENERAL PALOMO ⚔',{fontFamily:'monospace',fontSize:'17px',color:'#ffe6ad'}).setOrigin(.5);this.generalHud.add([gb,this.generalFill,gt]);}
     this.physics.add.collider(this.enemies, this.solids);
     this.physics.add.overlap(this.player, this.enemies, (p, e) => p.takeDamage(e.damage));
-    this.physics.add.overlap(this.projectiles,this.enemies,(shot,enemy)=>{const damage=Math.ceil((shot.damage||1)*(gameState.attackBoost||1));shot.destroy();for(let i=0;i<damage;i++)enemy.active&&enemy.hit();});
+    this.physics.add.overlap(this.projectiles,this.enemies,(shot,enemy)=>{shot.hitTargets=shot.hitTargets||new Set();if(shot.hitTargets.has(enemy))return;shot.hitTargets.add(enemy);const frontal=enemy.type==='knight'&&Math.sign(shot.x-enemy.x)!==enemy.direction;if(frontal&&!shot.piercing){shot.destroy();enemy.setTint(0xffe39a);this.time.delayedCall(90,()=>enemy.active&&enemy.clearTint());return;}const damage=Math.ceil((shot.damage||1)*(gameState.attackBoost||1));if(!shot.piercing)shot.destroy();for(let i=0;i<damage;i++)enemy.active&&enemy.hit();});
     this.makeCollectibles(); this.makeCheckpoint(); this.makeExit(); this.makePause(); this.makeMobileControls();
     this.events.on('player-hit', () => { gameState.health = this.player.health; this.refreshHud(); });
     this.events.on('game-over', () => this.showGameOver());
     this.add.text(32, 102, `${this.dataDef.title}\n${this.dataDef.objective}`, { fontFamily:'monospace', fontSize:'17px', color:'#ffe4ac', lineSpacing:7, stroke:'#28152f', strokeThickness:4 }).setScrollFactor(0).setDepth(200);
-    if(this.scene.key==='Level1Scene'){const controls=this.add.text(640,630,'A D / ← →  MOVERSE  ·  SPACE SALTAR  ·  X IMPULSO DE AMOR  ·  MANTENER X CARGAR',{fontFamily:'monospace',fontSize:'14px',color:'#fff0cf',backgroundColor:'#21132b',padding:{x:14,y:8}}).setOrigin(.5).setScrollFactor(0).setDepth(260);this.tweens.add({targets:controls,alpha:0,y:610,duration:700,delay:7000,onComplete:()=>controls.destroy()});}
+    if(this.scene.key==='Level1Scene'){const controls=this.add.text(640,625,'A/D MOVER · SPACE SALTAR · SHIFT CORRER\nZ/J COMBO · X/K ENERGÍA/CARGA · ↓+Z GOLPE AÉREO · C/L ESPECIAL · E INTERACTUAR',{fontFamily:'monospace',fontSize:'13px',color:'#fff0cf',align:'center',lineSpacing:5,backgroundColor:'#21132b',padding:{x:14,y:8}}).setOrigin(.5).setScrollFactor(0).setDepth(1050);this.tweens.add({targets:controls,alpha:0,y:605,duration:700,delay:9000,onComplete:()=>controls.destroy()});}
   }
 
   makeTextures() {
     TextureFactory.createCombatTextures(this);
     TextureFactory.createHazardTextures(this);
     TextureFactory.createPlayerTexture(this);
-    ['pigeon','dive','magic','broken','guard','slime'].forEach(t => TextureFactory.createEnemyTexture(this,t));
+    ['pigeon','dive','magic','broken','guard','slime','soldier','archer','knight','mage','general'].forEach(t => TextureFactory.createEnemyTexture(this,t));
     Object.keys(MEMORY).forEach(t => TextureFactory.createCollectibleTexture(this,t));
   }
 
@@ -88,7 +89,7 @@ export default class BaseLevelScene extends Phaser.Scene {
 
   makeCollectibles() {
     this.collectibles=[];
-    this.dataDef.collectibles.forEach(c=>{if(c.memory&&gameState.memories.includes(c.type))return;const item=new Collectible(this,c.x,c.y,c.type);item.isMemory=!!c.memory;this.collectibles.push(item);this.physics.add.overlap(this.player,item,()=>{if(c.type==='card3'&&this.enemies.getChildren().some(e=>e.active&&e.type==='guard'&&e.health>=5)){this.uiManager.showMessage('GUARDIÁN DE LA TORRE · Derrótalo para recuperar la carta','#ffe0ef',1200);return;}this.collect(item);});});
+    this.dataDef.collectibles.forEach(c=>{if(c.memory&&gameState.memories.includes(c.type))return;const item=new Collectible(this,c.x,c.y,c.type);item.isMemory=!!c.memory;this.collectibles.push(item);this.physics.add.overlap(this.player,item,()=>{if(c.type==='card3'&&this.enemies.getChildren().some(e=>e.active&&['guard','general'].includes(e.type)&&e.health>=5)){this.uiManager.showMessage('GENERAL PALOMO · Derrótalo para recuperar la carta','#ffe0ef',1200);return;}this.collect(item);});});
   }
 
   collect(item) {
@@ -98,15 +99,37 @@ export default class BaseLevelScene extends Phaser.Scene {
     } else this.addRose(1); this.refreshHud(); SaveManager.save(gameState);type.startsWith('card')?this.showCard(type):item.isMemory&&this.showMemory(type);
   }
 
-  showCard(type){const [name,msg]=MEMORY[type];this.physics.pause();this.paused=true;const layer=this.add.container(0,0).setScrollFactor(0).setDepth(1300);this.cardOverlay=layer;const shade=this.add.rectangle(640,360,1280,720,0x17091f,.75).setInteractive();const glow=this.add.ellipse(640,350,700,390,0xff5fae,.12);const paper=this.add.rectangle(640,345,620,300,0xffefd5,.99).setStrokeStyle(8,0xd45586);const title=this.add.text(640,245,'💌  CARTA ENCONTRADA  ❤️',{fontFamily:'monospace',fontSize:'28px',color:'#72264f',fontStyle:'bold'}).setOrigin(.5);const line=this.add.text(640,355,`${name}\n\n“${msg}”`,{fontFamily:'monospace',fontSize:'23px',color:'#51203e',align:'center',lineSpacing:10}).setOrigin(.5);const button=this.add.text(640,465,'CONTINUAR',{fontFamily:'monospace',fontSize:'18px',color:'#fff',backgroundColor:'#7b315f',padding:{x:20,y:10}}).setOrigin(.5);layer.add([shade,glow,paper,title,line,button]);layer.setScale(.68).setAlpha(0);this.tweens.add({targets:layer,scale:1,alpha:1,duration:380,ease:'Back.easeOut'});this.tweens.add({targets:glow,scale:1.12,alpha:.25,duration:650,yoyo:true,repeat:-1});this.particleManager.burst(640,345,0xff6eac,32,280);this.audioManager.playSfx('checkpoint');let closing=false;const close=()=>{if(closing)return;closing=true;this.tweens.add({targets:layer,alpha:0,scale:.9,duration:240,onComplete:()=>{layer.destroy();this.cardOverlay=null;this.cardPickupInProgress=false;this.paused=false;this.physics.resume();this.uiManager.showMessage('SALIDA DESBLOQUEADA','#ffe7a8',1500);}});};shade.once('pointerdown',close);this.input.keyboard.once('keydown-ENTER',close);this.input.keyboard.once('keydown-SPACE',close);}
+  showCard(type){
+    const [name,msg]=MEMORY[type];
+    this.physics.pause();this.paused=true;this.uiManager.container.setVisible(false);
+    const layer=this.add.container(0,0).setScrollFactor(0).setDepth(1300);this.cardOverlay=layer;
+    const shade=this.add.rectangle(640,360,1280,720,0x17091f,.75).setInteractive({useHandCursor:true});
+    const glow=this.add.ellipse(640,350,700,390,0xff5fae,.12);
+    const paper=this.add.rectangle(640,345,620,300,0xffefd5,.99).setStrokeStyle(8,0xd45586);
+    const title=this.add.text(640,245,'💌  CARTA ENCONTRADA  ❤️',{fontFamily:'monospace',fontSize:'28px',color:'#72264f',fontStyle:'bold'}).setOrigin(.5);
+    const line=this.add.text(640,355,`${name}\n\n“${msg}”`,{fontFamily:'monospace',fontSize:'23px',color:'#51203e',align:'center',lineSpacing:10}).setOrigin(.5);
+    const button=this.add.text(640,465,'CONTINUAR',{fontFamily:'monospace',fontSize:'18px',color:'#fff',backgroundColor:'#7b315f',padding:{x:20,y:10}}).setOrigin(.5).setInteractive({useHandCursor:true});
+    layer.add([shade,glow,paper,title,line,button]);layer.setScale(.68).setAlpha(0);
+    this.tweens.add({targets:layer,scale:1,alpha:1,duration:380,ease:'Back.easeOut'});this.tweens.add({targets:glow,scale:1.12,alpha:.25,duration:650,yoyo:true,repeat:-1});
+    this.particleManager.burst(640,345,0xff6eac,32,280);this.audioManager.playSfx('checkpoint');
+    let closing=false;
+    const cleanup=()=>{shade.removeInteractive();button.removeInteractive();this.input.keyboard.off('keydown-ENTER',close);this.input.keyboard.off('keydown-SPACE',close);};
+    const close=()=>{if(closing||!layer.active)return;closing=true;cleanup();this.tweens.add({targets:layer,alpha:0,scale:.9,duration:220,onComplete:()=>{if(layer.active)layer.destroy();this.cardOverlay=null;this.cardPickupInProgress=false;this.paused=false;this.physics.resume();this.uiManager.container.setVisible(true);this.refreshHud();this.uiManager.showMessage('SALIDA DESBLOQUEADA','#ffe7a8',1500);}});};
+    shade.once('pointerdown',close);button.once('pointerdown',close);this.input.keyboard.once('keydown-ENTER',close);this.input.keyboard.once('keydown-SPACE',close);
+    this.events.once('shutdown',cleanup);
+  }
 
   showMemory(type){const [name,msg]=MEMORY[type];this.physics.pause();const icon={heart:'♥',star:'★',rose:'🌹',letter:'✉',diamond:'◆'}[type];const shade=this.add.rectangle(640,360,1280,720,0x080510,.76).setScrollFactor(0).setDepth(300).setInteractive();const card=this.add.container(640,410).setScrollFactor(0).setDepth(301).setScale(.72).setAlpha(0);const paper=this.add.rectangle(0,0,690,330,0xfff0dc,.99).setStrokeStyle(9,0xc95884);const inner=this.add.rectangle(0,0,650,292,0,0).setStrokeStyle(3,0xe2b467);const roseL=this.add.text(-300,-130,'🌹',{fontSize:'30px'}).setOrigin(.5);const roseR=this.add.text(300,-130,'🌹',{fontSize:'30px'}).setOrigin(.5);const big=this.add.text(0,-96,icon,{fontFamily:'monospace',fontSize:'58px',color:'#d63e78'}).setOrigin(.5);const text=this.add.text(0,25,`${name}\n\n“${msg}”`,{fontFamily:'monospace',fontSize:'24px',color:'#521f45',align:'center',lineSpacing:8,wordWrap:{width:570}}).setOrigin(.5);const button=this.add.text(0,125,'CONTINUAR',{fontFamily:'monospace',fontSize:'17px',color:'#fff',backgroundColor:'#7b315f',padding:{x:18,y:9}}).setOrigin(.5);card.add([paper,inner,roseL,roseR,big,text,button]);this.tweens.add({targets:card,y:360,scale:1,alpha:1,duration:360,ease:'Back.easeOut'});for(let i=0;i<10;i++)this.time.delayedCall(i*35,()=>this.particleManager.sparkles(640+(Math.random()-.5)*500,300+Math.random()*220,0xff9dca,2));let closing=false;const close=()=>{if(closing)return;closing=true;this.tweens.add({targets:card,y:420,scale:.8,alpha:0,duration:220,onComplete:()=>{shade.destroy();card.destroy();this.physics.resume();}});};this.input.keyboard.once('keydown-ENTER',close);this.input.keyboard.once('keydown-SPACE',close);shade.once('pointerdown',close);}
 
   fireLove(x,y,dir){y+=18;const s=this.add.image(x,y,'love-shot').setScale(1.05);this.physics.add.existing(s);this.projectiles.add(s);s.body.setSize(36,48);s.body.setAllowGravity(false);s.travelDir=dir;s.travelSpeed=520;s.trailTimer=0;this.audioManager.playSfx('attack');this.particleManager.sparkles(x,y,0xff8ac4,8);this.tweens.add({targets:this.player,x:this.player.x-dir*5,duration:55,yoyo:true});this.time.delayedCall(1200,()=>s.active&&s.destroy());}
-  fireChargedLove(x,y,dir){y+=18;const s=this.add.image(x,y,'love-shot').setScale(2.25).setTint(0xffd3ee);this.physics.add.existing(s);this.projectiles.add(s);s.body.setSize(42,50);s.damage=3;s.body.setAllowGravity(false);s.travelDir=dir;s.travelSpeed=430;this.audioManager.playSfx('bossHit');this.cameras.main.shake(130,.004);this.particleManager.burst(x,y,0xff58ac,24,220);this.tweens.add({targets:s,scale:2.7,alpha:.82,duration:130,yoyo:true,repeat:-1});this.time.delayedCall(1800,()=>s.active&&s.destroy());}
+  fireChargedLove(x,y,dir){y+=18;const s=this.add.image(x,y,'love-shot').setScale(2.25).setTint(0xffd3ee);this.physics.add.existing(s);this.projectiles.add(s);s.body.setSize(42,50);s.damage=3;s.piercing=true;s.body.setAllowGravity(false);s.travelDir=dir;s.travelSpeed=430;this.audioManager.playSfx('bossHit');this.cameras.main.shake(130,.004);this.particleManager.burst(x,y,0xff58ac,24,220);this.tweens.add({targets:s,scale:2.7,alpha:.82,duration:130,yoyo:true,repeat:-1});this.time.delayedCall(1800,()=>s.active&&s.destroy());}
+  meleeAttack(x,y,dir,step){const reach=step===3?92:65,damage=step===3?2:1;this.player.setFrame(6);const arc=this.add.ellipse(x+dir*42,y+8,reach,step===3?82:54,0xff69ad,.18).setStrokeStyle(4,0xffd4eb,.9).setDepth(24);this.tweens.add({targets:arc,scale:1.3,alpha:0,duration:120,onComplete:()=>arc.destroy()});this.enemies.getChildren().filter(e=>e.active&&Math.abs(e.x-(x+dir*35))<reach&&Math.abs(e.y-y)<85).forEach(e=>{for(let i=0;i<damage;i++)e.active&&e.hit();if(e.body)e.setVelocityX(dir*(e.type==='guard'?90:190));});this.cameras.main.shake(45,.002);this.audioManager.playSfx('attack');}
+  startAirSlam(x,y){this.particleManager.sparkles(x,y,0xff83be,10);}
+  airSlamImpact(x,y){const wave=this.add.ellipse(x,y+35,190,45,0xff4fa4,.22).setStrokeStyle(5,0xffd1e8).setDepth(22);this.tweens.add({targets:wave,scaleX:1.7,alpha:0,duration:260,onComplete:()=>wave.destroy()});this.enemies.getChildren().filter(e=>e.active&&Phaser.Math.Distance.Between(x,y,e.x,e.y)<135).forEach(e=>{e.hit();e.hit();});this.particleManager.burst(x,y+30,0xff75b3,22,190);this.cameras.main.shake(110,.005);}
+  useSpecial(x,y){const cards=(gameState.memories||[]).filter(v=>/^card[123]$/.test(v)).length;if(cards<3){this.uiManager.showMessage('LATIDO VERDADERO · Requiere las 3 cartas','#ffd5e8');return false;}const ring=this.add.circle(x,y,35,0xff5cab,.22).setStrokeStyle(8,0xffeff8).setDepth(25);this.tweens.add({targets:ring,scale:7,alpha:0,duration:520,onComplete:()=>ring.destroy()});this.enemies.getChildren().filter(e=>e.active&&Phaser.Math.Distance.Between(x,y,e.x,e.y)<270).forEach(e=>{for(let i=0;i<3;i++)e.active&&e.hit();});this.particleManager.burst(x,y,0xff4fa8,45,350);this.cameras.main.shake(180,.008);this.audioManager.playSfx('victory');return true;}
   addRose(n){ gameState.roses=(gameState.roses||0)+n; this.refreshHud(); }
   refreshHud(){const cards=(gameState.memories||[]).filter(x=>/^card[123]$/.test(x)).length;this.uiManager?.updateHud({health:this.player?.health??gameState.health,roses:gameState.roses,cards,power:gameState.power}); }
-  makeCheckpoint(){(this.dataDef.checkpoints||[this.dataDef.checkpoint]).forEach(x=>{const c=this.add.image(x,610,'collectible-heart').setScale(1.5).setTint(0x8feaff).setDepth(18);this.physics.add.existing(c,true);this.physics.add.overlap(this.player,c,()=>{if(gameState.checkpoint?.scene===this.scene.key&&gameState.checkpoint.x===x)return;gameState.checkpoint={scene:this.scene.key,x,y:560};gameState.health=this.player.health;SaveManager.save(gameState);this.uiManager.showMessage('CHECKPOINT · El amor renueva tus fuerzas');this.player.heal(2);this.audioManager.playSfx('checkpoint');});});}
+  makeCheckpoint(){(this.dataDef.checkpoints||[this.dataDef.checkpoint]).forEach(x=>{const c=this.add.image(x,610,'collectible-heart').setScale(1.5).setTint(0x8feaff).setDepth(18);this.physics.add.existing(c,true);this.physics.add.overlap(this.player,c,()=>{if(gameState.checkpoint?.scene===this.scene.key&&gameState.checkpoint.x===x)return;gameState.checkpoint={scene:this.scene.key,x,y:560};gameState.health=this.player.health;SaveManager.save(gameState);this.uiManager.showMessage('❤️ RECUERDO GUARDADO');this.player.heal(2);this.audioManager.playSfx('checkpoint');});});}
   makeExit(){
     if(this.exitCreated){console.error(`[QA ${this.scene.key}] Se intentó crear más de una salida`);return;}
     this.exitCreated=true;
@@ -147,6 +170,7 @@ export default class BaseLevelScene extends Phaser.Scene {
   update(time,delta){
     if(!this.player||this.paused||this.gameOver)return;this.player.update(time,delta);
     this.cameras.main.setFollowOffset(Phaser.Math.Linear(this.cameras.main.followOffset.x,-this.player.body.velocity.x*.12,.035),Phaser.Math.Linear(this.cameras.main.followOffset.y,this.player.body.velocity.y<0?28:0,.035));this.updateExitState();this.enemies?.getChildren().forEach(e=>e.update(delta));
+    if(this.generalHud){const alive=this.general?.active&&this.general.health>0;this.generalHud.setVisible(alive&&Math.abs(this.player.x-this.general.x)<620);this.generalFill.displayWidth=332*Math.max(0,this.general.health/this.generalMaxHealth);}
     this.projectiles?.getChildren().forEach(s=>{s.x+=s.travelDir*s.travelSpeed*delta/1000;s.body.updateFromGameObject();const targets=this.enemies.getChildren().filter(e=>e.active&&Math.abs(e.x-s.x)<360&&Math.sign(e.x-s.x)===s.travelDir);if(targets.length){targets.sort((a,b)=>Math.abs(a.x-s.x)-Math.abs(b.x-s.x));s.y=Phaser.Math.Linear(s.y,targets[0].y,.1);s.body.updateFromGameObject();}s.trailTimer=(s.trailTimer||0)-delta;if(s.active&&s.trailTimer<=0){s.trailTimer=70;const h=this.add.text(s.x,s.y,'♥',{fontSize:'9px',color:'#ff86bd'}).setOrigin(.5).setDepth(10);this.tweens.add({targets:h,x:h.x-s.travelDir*14,alpha:0,scale:.3,duration:260,onComplete:()=>h.destroy()});}});
     this.hazards?.forEach(h=>{h.phase=(h.phase+delta)%2400;h.dangerous=h.phase>850&&h.phase<1550;h.body.enable=h.dangerous;const warning=h.phase>500&&h.phase<850;h.setAlpha(h.dangerous?1:(warning?0.65:0.28)).setScale(1,h.dangerous?1:(warning?0.72:0.45));h.warning.setAlpha(warning?0.9:(h.dangerous?0.18:0.05)).setScale(warning?1.25:1);});
     if(this.player.invulnerable>0){this.player.invulnerable-=delta;this.player.setAlpha(this.player.invulnerable%100<50?.35:1);}else this.player.setAlpha(1);if(this.player.y>760)this.showGameOver();

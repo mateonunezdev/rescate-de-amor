@@ -1,4 +1,4 @@
-import Player from '../entities/Player.js?v=20260819-final-world-14';
+import Player from '../entities/Player.js?v=20260820-gameplay-expansion-23';
 import UIManager from '../ui/UIManager.js?v=20260820-professional-final-22';
 import AudioManager from '../systems/AudioManager.js';
 import ParticleManager from '../systems/ParticleManager.js';
@@ -294,6 +294,10 @@ export default class BossScene extends Phaser.Scene {
   }
 
   fireChargedLove(x,y,direction){const shot=this.add.image(x,y,'love-shot').setScale(2.35).setTint(0xffd4ef);this.physics.add.existing(shot);this.loveShots.add(shot);shot.damage=3;shot.life=2500;shot.body.setAllowGravity(false);const angle=Phaser.Math.Angle.Between(x,y,this.boss.x,this.boss.y);shot.body.setVelocity(Math.cos(angle)*470,Math.sin(angle)*470);this.particleManager.burst(x,y,0xff5bad,28,240);this.cameras.main.shake(140,.005);this.audioManager.playSfx('bossHit');}
+  meleeAttack(x,y,dir,step){const arc=this.add.ellipse(x+dir*42,y+8,step===3?96:66,step===3?82:54,0xff69ad,.2).setStrokeStyle(4,0xffd4eb,.9).setDepth(35);this.tweens.add({targets:arc,scale:1.3,alpha:0,duration:120,onComplete:()=>arc.destroy()});if(Phaser.Math.Distance.Between(x,y,this.boss.x,this.boss.y)<135){for(let i=0;i<(step===3?2:1);i++){this.bossInvulnerable=0;this.handlePlayerAttack();}}this.cameras.main.shake(45,.002);this.audioManager.playSfx('attack');}
+  startAirSlam(x,y){this.particleManager.sparkles(x,y,0xff83be,10);}
+  airSlamImpact(x,y){const wave=this.add.ellipse(x,y+35,200,48,0xff4fa4,.24).setStrokeStyle(5,0xffd1e8).setDepth(35);this.tweens.add({targets:wave,scaleX:1.7,alpha:0,duration:260,onComplete:()=>wave.destroy()});this.particleManager.burst(x,y+30,0xff75b3,24,200);this.cameras.main.shake(110,.005);}
+  useSpecial(x,y){const cards=(gameState.memories||[]).filter(v=>/^card[123]$/.test(v)).length;if(cards<3){this.uiManager.showMessage('LATIDO VERDADERO · Requiere las 3 cartas','#ffd5e8');return false;}const ring=this.add.circle(x,y,38,0xff5cab,.25).setStrokeStyle(9,0xffeff8).setDepth(90);this.tweens.add({targets:ring,scale:12,alpha:0,duration:620,onComplete:()=>ring.destroy()});this.particleManager.burst(x,y,0xff4fa8,55,420);for(let i=0;i<5;i++){this.bossInvulnerable=0;this.handlePlayerAttack();}this.cameras.main.shake(220,.009);this.audioManager.playSfx('victory');return true;}
 
   defeatBoss() {
     if (this.defeated) return;
