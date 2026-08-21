@@ -24,13 +24,14 @@ export default class Collectible extends Phaser.GameObjects.Container {
 
     scene.add.existing(this);
     scene.physics.add.existing(this, true);
-    this.body.setSize(20, 20);
-    this.body.setOffset(-10, -10);
+    this.pickupWidth=type.startsWith('card')?64:56;this.pickupHeight=type.startsWith('card')?80:68;this.pickupRange=type.startsWith('card')?68:60;this.magnetizing=false;
+    this.body.setSize(this.pickupWidth, this.pickupHeight);
+    this.body.setOffset(-this.pickupWidth/2, -this.pickupHeight/2);
     this.setDepth(10);
 
     this.scene.tweens.add({
-      targets: this,
-      y: y - 6,
+      targets: [this.sprite,this.glow],
+      y: -6,
       duration: 1200,
       yoyo: true,
       repeat: -1,
@@ -39,6 +40,8 @@ export default class Collectible extends Phaser.GameObjects.Container {
     this.scene.tweens.add({ targets: this.glow, scale: 1.35, alpha: 0.04, duration: 650, yoyo: true, repeat: -1 });
   }
 
+  magnetTo(player,onComplete){if(this.collected||this.magnetizing)return;this.magnetizing=true;if(this.body)this.body.enable=false;this.scene.tweens.killTweensOf([this.sprite,this.glow]);const dx=Phaser.Math.Clamp(player.x-this.x,-48,48),dy=Phaser.Math.Clamp(player.y-this.y,-55,55);this.scene.tweens.add({targets:[this.sprite,this.glow],x:dx,y:dy,scale:1.18,duration:130,ease:'Sine.easeIn',onComplete});}
+
   collect() {
     if (this.collected) return;
     this.collected = true;
@@ -46,7 +49,7 @@ export default class Collectible extends Phaser.GameObjects.Container {
     this.scene.particleManager?.roseBurst(this.x, this.y);
     this.scene.audioManager?.playSfx(this.type === 'heart' ? 'heart' : this.type === 'diamond' ? 'diamond' : 'rose');
     this.scene.events.emit('collectible-collected', this.type, this.x, this.y);
-    this.scene.tweens.killTweensOf(this);
-    this.scene.tweens.add({targets:this,y:this.y-55,scale:1.8,alpha:0,duration:360,ease:'Back.easeIn',onComplete:()=>this.destroy()});
+    this.scene.tweens.killTweensOf([this,this.sprite,this.glow]);
+    this.scene.tweens.add({targets:this.sprite,y:this.sprite.y-45,scale:1.8,alpha:0,duration:260,ease:'Back.easeIn'});this.scene.tweens.add({targets:this.glow,scale:2,alpha:0,duration:220,onComplete:()=>this.destroy()});
   }
 }

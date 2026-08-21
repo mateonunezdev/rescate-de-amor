@@ -1,4 +1,4 @@
-import Player from '../entities/Player.js?v=20260820-gameplay-expansion-23';
+import Player from '../entities/Player.js?v=20260820-pickup-combat-24';
 import UIManager from '../ui/UIManager.js?v=20260820-professional-final-22';
 import AudioManager from '../systems/AudioManager.js';
 import ParticleManager from '../systems/ParticleManager.js';

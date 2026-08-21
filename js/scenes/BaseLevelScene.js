@@ -1,12 +1,12 @@
-import Player from '../entities/Player.js?v=20260820-gameplay-expansion-23';
-import Enemy from '../entities/Enemy.js?v=20260820-gameplay-expansion-23';
-import Collectible from '../entities/Collectible.js';
+import Player from '../entities/Player.js?v=20260820-pickup-combat-24';
+import Enemy from '../entities/Enemy.js?v=20260820-pickup-combat-24';
+import Collectible from '../entities/Collectible.js?v=20260820-pickup-combat-24';
 import UIManager from '../ui/UIManager.js?v=20260820-professional-final-22';
 import AudioManager from '../systems/AudioManager.js';
 import ParticleManager from '../systems/ParticleManager.js';
 import SaveManager from '../systems/SaveManager.js';
 import { gameState } from '../config.js';
-import { TextureFactory } from '../utils/TextureFactory.js?v=20260820-gameplay-expansion-23';
+import { TextureFactory } from '../utils/TextureFactory.js?v=20260820-pickup-combat-24';
 
 const MEMORY = {
   heart: ['CORAZÓN', 'Contigo, cada latido es especial.'],
@@ -89,8 +89,10 @@ export default class BaseLevelScene extends Phaser.Scene {
 
   makeCollectibles() {
     this.collectibles=[];
-    this.dataDef.collectibles.forEach(c=>{if(c.memory&&gameState.memories.includes(c.type))return;const item=new Collectible(this,c.x,c.y,c.type);item.isMemory=!!c.memory;this.collectibles.push(item);this.physics.add.overlap(this.player,item,()=>{if(c.type==='card3'&&this.enemies.getChildren().some(e=>e.active&&['guard','general'].includes(e.type)&&e.health>=5)){this.uiManager.showMessage('GENERAL PALOMO · Derrótalo para recuperar la carta','#ffe0ef',1200);return;}this.collect(item);});});
+    this.dataDef.collectibles.forEach(c=>{if(c.memory&&gameState.memories.includes(c.type))return;const item=new Collectible(this,c.x,c.y,c.type);item.isMemory=!!c.memory;item.collectibleData=c;this.collectibles.push(item);this.physics.add.overlap(this.player,item,()=>this.attemptPickup(item));});
   }
+
+  attemptPickup(item){if(!item?.active||item.collected||item.magnetizing)return;if(item.type==='card3'&&this.enemies.getChildren().some(e=>e.active&&['guard','general'].includes(e.type)&&e.health>=5)){if(!this.guardMessageAt||this.time.now-this.guardMessageAt>1100){this.guardMessageAt=this.time.now;this.uiManager.showMessage('GENERAL PALOMO · Derrótalo para recuperar la carta','#ffe0ef',1000);}return;}item.magnetTo(this.player,()=>item.active&&this.collect(item));}
 
   collect(item) {
     if(item.collected||(item.type.startsWith('card')&&this.cardPickupInProgress))return; const type=item.type;if(type.startsWith('card'))this.cardPickupInProgress=true;item.collect();
@@ -123,8 +125,8 @@ export default class BaseLevelScene extends Phaser.Scene {
 
   fireLove(x,y,dir){y+=18;const s=this.add.image(x,y,'love-shot').setScale(1.05);this.physics.add.existing(s);this.projectiles.add(s);s.body.setSize(36,48);s.body.setAllowGravity(false);s.travelDir=dir;s.travelSpeed=520;s.trailTimer=0;this.audioManager.playSfx('attack');this.particleManager.sparkles(x,y,0xff8ac4,8);this.tweens.add({targets:this.player,x:this.player.x-dir*5,duration:55,yoyo:true});this.time.delayedCall(1200,()=>s.active&&s.destroy());}
   fireChargedLove(x,y,dir){y+=18;const s=this.add.image(x,y,'love-shot').setScale(2.25).setTint(0xffd3ee);this.physics.add.existing(s);this.projectiles.add(s);s.body.setSize(42,50);s.damage=3;s.piercing=true;s.body.setAllowGravity(false);s.travelDir=dir;s.travelSpeed=430;this.audioManager.playSfx('bossHit');this.cameras.main.shake(130,.004);this.particleManager.burst(x,y,0xff58ac,24,220);this.tweens.add({targets:s,scale:2.7,alpha:.82,duration:130,yoyo:true,repeat:-1});this.time.delayedCall(1800,()=>s.active&&s.destroy());}
-  meleeAttack(x,y,dir,step){const reach=step===3?92:65,damage=step===3?2:1;this.player.setFrame(6);const arc=this.add.ellipse(x+dir*42,y+8,reach,step===3?82:54,0xff69ad,.18).setStrokeStyle(4,0xffd4eb,.9).setDepth(24);this.tweens.add({targets:arc,scale:1.3,alpha:0,duration:120,onComplete:()=>arc.destroy()});this.enemies.getChildren().filter(e=>e.active&&Math.abs(e.x-(x+dir*35))<reach&&Math.abs(e.y-y)<85).forEach(e=>{for(let i=0;i<damage;i++)e.active&&e.hit();if(e.body)e.setVelocityX(dir*(e.type==='guard'?90:190));});this.cameras.main.shake(45,.002);this.audioManager.playSfx('attack');}
-  startAirSlam(x,y){this.particleManager.sparkles(x,y,0xff83be,10);}
+  meleeAttack(x,y,dir,step){const reach=step===3?88:56,damage=step===3?2:1,duration=step===3?220:150;this.player.playCombatPose(step===1?6:step===2?7:9,duration,dir*(step===3?8:4));const hitbox=this.add.zone(x+dir*(step===3?52:38),y+6,reach,68);this.physics.add.existing(hitbox,true);const touched=new Set();const overlap=this.physics.add.overlap(hitbox,this.enemies,(_,e)=>{if(touched.has(e))return;touched.add(e);for(let i=0;i<damage;i++)e.active&&e.hit();if(e.body)e.setVelocityX(dir*(e.type==='guard'||e.type==='general'?90:190));});const arc=this.add.ellipse(x+dir*42,y+8,reach,step===3?82:54,0xff69ad,.18).setStrokeStyle(4,0xffd4eb,.9).setDepth(24);const spark=this.add.text(x+dir*60,y-4,step===3?'♥':'✦',{fontSize:step===3?'28px':'18px',color:'#fff0fa'}).setOrigin(.5).setDepth(25);this.tweens.add({targets:[arc,spark],scale:1.35,alpha:0,duration,onComplete:()=>{overlap.destroy();hitbox.destroy();arc.destroy();spark.destroy();}});this.cameras.main.shake(45,.002);this.audioManager.playSfx('attack');}
+  startAirSlam(x,y){this.player.playCombatPose(5,450,12*this.player.facing);this.particleManager.sparkles(x,y,0xff83be,10);}
   airSlamImpact(x,y){const wave=this.add.ellipse(x,y+35,190,45,0xff4fa4,.22).setStrokeStyle(5,0xffd1e8).setDepth(22);this.tweens.add({targets:wave,scaleX:1.7,alpha:0,duration:260,onComplete:()=>wave.destroy()});this.enemies.getChildren().filter(e=>e.active&&Phaser.Math.Distance.Between(x,y,e.x,e.y)<135).forEach(e=>{e.hit();e.hit();});this.particleManager.burst(x,y+30,0xff75b3,22,190);this.cameras.main.shake(110,.005);}
   useSpecial(x,y){const cards=(gameState.memories||[]).filter(v=>/^card[123]$/.test(v)).length;if(cards<3){this.uiManager.showMessage('LATIDO VERDADERO · Requiere las 3 cartas','#ffd5e8');return false;}const ring=this.add.circle(x,y,35,0xff5cab,.22).setStrokeStyle(8,0xffeff8).setDepth(25);this.tweens.add({targets:ring,scale:7,alpha:0,duration:520,onComplete:()=>ring.destroy()});this.enemies.getChildren().filter(e=>e.active&&Phaser.Math.Distance.Between(x,y,e.x,e.y)<270).forEach(e=>{for(let i=0;i<3;i++)e.active&&e.hit();});this.particleManager.burst(x,y,0xff4fa8,45,350);this.cameras.main.shake(180,.008);this.audioManager.playSfx('victory');return true;}
   addRose(n){ gameState.roses=(gameState.roses||0)+n; this.refreshHud(); }
@@ -170,6 +172,7 @@ export default class BaseLevelScene extends Phaser.Scene {
   update(time,delta){
     if(!this.player||this.paused||this.gameOver)return;this.player.update(time,delta);
     this.cameras.main.setFollowOffset(Phaser.Math.Linear(this.cameras.main.followOffset.x,-this.player.body.velocity.x*.12,.035),Phaser.Math.Linear(this.cameras.main.followOffset.y,this.player.body.velocity.y<0?28:0,.035));this.updateExitState();this.enemies?.getChildren().forEach(e=>e.update(delta));
+    this.collectibles?.forEach(item=>{if(item.active&&!item.collected&&!item.magnetizing&&Phaser.Math.Distance.Between(this.player.x,this.player.y,item.x,item.y)<=item.pickupRange)this.attemptPickup(item);});
     if(this.generalHud){const alive=this.general?.active&&this.general.health>0;this.generalHud.setVisible(alive&&Math.abs(this.player.x-this.general.x)<620);this.generalFill.displayWidth=332*Math.max(0,this.general.health/this.generalMaxHealth);}
     this.projectiles?.getChildren().forEach(s=>{s.x+=s.travelDir*s.travelSpeed*delta/1000;s.body.updateFromGameObject();const targets=this.enemies.getChildren().filter(e=>e.active&&Math.abs(e.x-s.x)<360&&Math.sign(e.x-s.x)===s.travelDir);if(targets.length){targets.sort((a,b)=>Math.abs(a.x-s.x)-Math.abs(b.x-s.x));s.y=Phaser.Math.Linear(s.y,targets[0].y,.1);s.body.updateFromGameObject();}s.trailTimer=(s.trailTimer||0)-delta;if(s.active&&s.trailTimer<=0){s.trailTimer=70;const h=this.add.text(s.x,s.y,'♥',{fontSize:'9px',color:'#ff86bd'}).setOrigin(.5).setDepth(10);this.tweens.add({targets:h,x:h.x-s.travelDir*14,alpha:0,scale:.3,duration:260,onComplete:()=>h.destroy()});}});
     this.hazards?.forEach(h=>{h.phase=(h.phase+delta)%2400;h.dangerous=h.phase>850&&h.phase<1550;h.body.enable=h.dangerous;const warning=h.phase>500&&h.phase<850;h.setAlpha(h.dangerous?1:(warning?0.65:0.28)).setScale(1,h.dangerous?1:(warning?0.72:0.45));h.warning.setAlpha(warning?0.9:(h.dangerous?0.18:0.05)).setScale(warning?1.25:1);});

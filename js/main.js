@@ -2,10 +2,10 @@ import { GAME_CONFIG } from './config.js?v=20260820-professional-final-22';
 import BootScene from './scenes/BootScene.js?v=20260819-final-world-12';
 import MenuScene from './scenes/MenuScene.js?v=20260819-final-art-4';
 import IntroScene from './scenes/IntroScene.js?v=20260820-professional-final-22';
-import Level1Scene from './scenes/Level1Scene.js?v=20260820-gameplay-expansion-23';
-import Level2Scene from './scenes/Level2Scene.js?v=20260820-gameplay-expansion-23';
-import Level3Scene from './scenes/Level3Scene.js?v=20260820-gameplay-expansion-23';
-import BossScene from './scenes/BossScene.js?v=20260820-gameplay-expansion-23';
+import Level1Scene from './scenes/Level1Scene.js?v=20260820-pickup-combat-24';
+import Level2Scene from './scenes/Level2Scene.js?v=20260820-pickup-combat-24';
+import Level3Scene from './scenes/Level3Scene.js?v=20260820-pickup-combat-24';
+import BossScene from './scenes/BossScene.js?v=20260820-pickup-combat-24';
 import EndingScene from './scenes/EndingScene.js?v=20260820-professional-final-22';
 import SecretScene from './scenes/SecretScene.js?v=20260819-final-art-4';
 

@@ -2,6 +2,8 @@ export class TextureFactory {
   static createCombatTextures(scene){
     if(!scene.textures.exists('love-shot')){const g=scene.add.graphics();g.fillStyle(0x9b286f,1);g.fillRect(3,12,8,8);g.fillRect(9,7,24,20);g.fillRect(33,11,8,12);g.fillStyle(0xff55a4,1);g.fillRect(8,11,27,14);g.fillStyle(0xff9dce,1);g.fillCircle(20,13,8);g.fillCircle(29,13,8);g.fillTriangle(12,15,37,15,24,28);g.fillStyle(0xffffff,1);g.fillRect(17,9,6,5);g.fillRect(9,15,5,4);g.fillStyle(0xffd8ee,.8);g.fillRect(0,15,8,3);g.generateTexture('love-shot',44,32);g.destroy();}
     if(!scene.textures.exists('kiss-shot')){const g=scene.add.graphics();g.fillStyle(0xff86c1,.25);g.fillCircle(18,12,17);g.fillStyle(0xee3e8c,1);g.fillEllipse(18,12,25,11);g.fillStyle(0xffc2dc,1);g.fillEllipse(18,10,14,4);g.generateTexture('kiss-shot',36,25);g.destroy();}
+    if(!scene.textures.exists('enemy-feather-shot')){const g=scene.add.graphics();g.fillStyle(0x2a1838,.35);g.fillEllipse(15,11,25,13);g.fillStyle(0xf2d9ed,1);g.fillEllipse(15,9,22,8);g.fillStyle(0xca72b1,1);g.fillTriangle(5,10,0,18,13,12);g.lineStyle(2,0xffffff,.8);g.lineBetween(8,9,27,7);g.generateTexture('enemy-feather-shot',32,20);g.destroy();}
+    if(!scene.textures.exists('enemy-magic-orb')){const g=scene.add.graphics();g.fillStyle(0x6c238d,.25);g.fillCircle(18,18,17);g.lineStyle(3,0xe281ff,.9);g.strokeCircle(18,18,13);g.fillStyle(0xa945d0,1);g.fillCircle(18,18,9);g.fillStyle(0xffffff,1);g.fillCircle(15,14,4);g.generateTexture('enemy-magic-orb',36,36);g.destroy();}
   }
   static createHazardTextures(scene){
     if(!scene.textures.exists('hazard-thorns')){const g=scene.add.graphics();g.fillStyle(0x244c32,1);g.fillRect(0,19,54,8);g.fillStyle(0x8bd061,1);for(let x=2;x<54;x+=9)g.fillTriangle(x,20,x+5,2+(x%3)*3,x+10,20);g.fillStyle(0xff659e,1);for(let x=8;x<52;x+=18)g.fillCircle(x,17,3);g.generateTexture('hazard-thorns',54,28);g.destroy();}
@@ -84,14 +86,19 @@ export class TextureFactory {
       gfx.generateTexture(key, 24, 40);
     } else if (['soldier','archer','knight','mage','general'].includes(type)) {
       const heavy=type==='knight'||type==='general',robe=type==='mage';
+      gfx.fillStyle(0x120f19,.45);gfx.fillEllipse(25,67,21,4);
+      gfx.fillStyle(0x211b2b,1);gfx.fillRoundedRect(7,18,34,46,6);
       gfx.fillStyle(robe?0x743d8f:heavy?0x39445d:0x51405c,1);gfx.fillRoundedRect(8,20,30,42,5);
-      gfx.fillStyle(0xd9cfda,1);gfx.fillEllipse(23,15,15,13);gfx.fillStyle(0x2c2437,1);gfx.fillCircle(28,12,2);gfx.fillStyle(0xe6ad55,1);gfx.fillTriangle(36,15,46,19,36,21);
-      gfx.fillStyle(0xb9a6c8,1);gfx.fillTriangle(11,29,0,20,5,42);gfx.fillTriangle(36,29,48,20,42,42);
+      gfx.fillStyle(0xb9a6c8,1);gfx.fillTriangle(11,29,0,20,5,46);gfx.fillTriangle(36,29,48,20,42,46);gfx.fillStyle(0xe3d8e7,1);gfx.fillTriangle(7,29,2,25,5,37);gfx.fillTriangle(40,29,46,25,43,37);
+      gfx.fillStyle(0xd9cfda,1);gfx.fillEllipse(23,15,15,13);gfx.fillStyle(0xf3eaf3,1);gfx.fillEllipse(19,12,7,6);gfx.fillStyle(0x2c2437,1);gfx.fillCircle(28,12,2);gfx.fillStyle(0xe6ad55,1);gfx.fillTriangle(36,15,48,19,36,22);
+      gfx.fillStyle(robe?0xa85dcc:heavy?0xbcae91:0x84687e,1);gfx.fillRect(12,27,22,5);gfx.fillStyle(type==='general'?0xe7bf55:0xd9d5df,1);gfx.fillRect(10,36,26,3);
       if(type==='archer'){gfx.lineStyle(3,0xe1b86a,1);gfx.strokeCircle(43,38,12);}
       else if(type==='mage'){gfx.fillStyle(0xb860dc,1);gfx.fillCircle(42,35,6);gfx.fillRect(40,38,4,25);}
       else{gfx.fillStyle(0xd8ad58,1);gfx.fillRect(41,24,3,39);gfx.fillTriangle(37,25,48,25,43,15);}
-      if(heavy){gfx.fillStyle(0xc9b46d,1);gfx.fillRoundedRect(2,30,13,25,4);}
-      gfx.fillStyle(0x242231,1);gfx.fillRect(11,60,10,9);gfx.fillRect(27,60,10,9);gfx.generateTexture(key,50,70);
+      if(heavy){gfx.fillStyle(type==='general'?0xe2af45:0xc9b46d,1);gfx.fillRoundedRect(1,29,15,27,5);gfx.fillStyle(0x8d3869,1);gfx.fillCircle(8,42,5);}
+      if(type==='general'){gfx.fillStyle(0x9e295f,1);gfx.fillTriangle(10,29,0,66,18,58);gfx.fillStyle(0xf2c75e,1);gfx.fillTriangle(15,4,20,0,24,5);gfx.fillTriangle(24,5,29,0,34,6);}
+      if(type==='mage'){gfx.fillStyle(0x3c2457,1);gfx.fillTriangle(8,21,24,0,40,21);gfx.fillStyle(0xff75d0,.8);gfx.fillCircle(23,8,3);}
+      gfx.fillStyle(0x242231,1);gfx.fillRect(11,59,10,10);gfx.fillRect(27,59,10,10);gfx.fillStyle(0xc5a7c9,1);gfx.fillRect(13,59,6,3);gfx.fillRect(29,59,6,3);gfx.generateTexture(key,50,70);
     } else if (type === 'magic' || type === 'dive') {
       gfx.fillStyle(type === 'magic' ? 0xb879e8 : 0xd8d0e5, 1); gfx.fillEllipse(12, 11, 17, 11);
       gfx.fillStyle(0xf5eef8, 1); gfx.fillTriangle(7, 9, 0, 2, 3, 13); gfx.fillTriangle(16, 9, 24, 2, 21, 13);

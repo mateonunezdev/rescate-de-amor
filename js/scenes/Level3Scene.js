@@ -1,4 +1,4 @@
-import BaseLevelScene from './BaseLevelScene.js?v=20260820-gameplay-expansion-23';
+import BaseLevelScene from './BaseLevelScene.js?v=20260820-pickup-combat-24';
 export default class Level3Scene extends BaseLevelScene {
   constructor(){ super('Level3Scene',{
     title:'NIVEL 3 · CASTILLO DE PECHO PALOMA',objective:'Libera el camino a la torre. Mateo te espera.',theme:'castle',background:'bg-castle',width:3400,music:'castleMusic',sky:'#090715',skyTop:0x080611,skyBottom:0x312039,ground:0x17131d,platform:0x30283a,trim:0xc98b59,accent:0xff6b87,
