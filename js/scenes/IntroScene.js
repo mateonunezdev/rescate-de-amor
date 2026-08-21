@@ -43,6 +43,7 @@ export default class IntroScene extends Phaser.Scene {
 
   showCastleInterior(){
     this.step=12;this.castleLayer=this.add.container(0,0).setScrollFactor(0).setDepth(80);this.castleLayer.add(this.add.rectangle(640,360,1280,720,0x171021));for(let x=70;x<1280;x+=150)this.castleLayer.add(this.add.rectangle(x,390,90,520,0x271b34).setStrokeStyle(3,0x5b3b55));this.castleLayer.add(this.add.rectangle(640,625,1280,170,0x30233b).setStrokeStyle(7,0x76506c));this.innerMateo=this.add.image(500,530,'mateo-final',1).setScale(1.15).setScrollFactor(0).setDepth(84);this.innerVillain=this.add.image(760,490,'pecho-final',0).setScale(1.35).setScrollFactor(0).setDepth(84);this.innerBars=this.add.container(500,495).setScrollFactor(0).setDepth(85);this.innerBars.add(this.add.rectangle(0,0,165,205,0x130d19,.18).setStrokeStyle(9,0xc48a4e));for(let i=-2;i<=2;i++)this.innerBars.add(this.add.rectangle(i*31,0,8,195,0xd3a653).setStrokeStyle(2,0xffdd8b));this.cameras.main.setZoom(1).centerOn(640,360);this.text.setScrollFactor(0).setDepth(91).setText('PECHO PALOMA: “Bienvenido a mi reino.”');this.dialogPanel.setScrollFactor(0).setDepth(90);this.prompt.setScrollFactor(0).setDepth(95);this.skip.setScrollFactor(0).setDepth(96);
+    this.step=14;
   }
 
   showGardenResolve(){
@@ -51,24 +52,26 @@ export default class IntroScene extends Phaser.Scene {
 
   advance(){
     if(this.locked)return;const steps=[
-      ()=>this.say('MATEO: “Me gustan estos momentos contigo.”\nPAOLA: “A mí también.”'),
-      ()=>this.say('MATEO: “Contigo todo se siente diferente.”',()=>{const h=this.add.text(590,455,'♥',{fontSize:'40px',color:'#ff6fae'}).setOrigin(.5).setDepth(30);this.tweens.add({targets:h,y:420,scale:1.35,duration:650,yoyo:true,repeat:1});}),
-      ()=>this.say('MATEO: “¿Desde cuándo hay tantas palomas aquí?”',()=>this.spawnBirds(3)),
-      ()=>this.say('PAOLA: “No sé… pero esto no me gusta.”',()=>{this.spawnBirds(11);this.add.rectangle(640,360,1280,720,0x090512,.2).setDepth(23);this.cameras.main.shake(120,.002);}),
-      ()=>this.say('PECHO PALOMA: “Qué escena tan adorable…”',()=>{this.villain.setAlpha(1);this.aura.setAlpha(1);this.spawnBirds(8,this.villain);this.tweens.add({targets:[this.villain,this.aura],y:'-=35',duration:700,ease:'Back.easeOut'});this.playCue('magic');}),
-      ()=>this.say('PAOLA: “¿Quién eres?”\nPECHO PALOMA: “Pecho Paloma. Reina de las palomas.”'),
-      ()=>this.say('PECHO PALOMA: “Y acabo de encontrar algo que quiero.”\nMATEO: “¿Qué?”'),
+      ()=>this.say('MATEO: “Llevaba días queriendo traerte aquí.”\nPAOLA: “¿Y tanto misterio era por esto?”'),
+      ()=>this.say('MATEO: “Por esto… y por estar contigo.”\nPAOLA: “Qué cursi.”\nMATEO: “Pero estás sonriendo.”\nPAOLA: “No dije que no me gustara.”',()=>{const h=this.add.text(590,455,'♥',{fontSize:'40px',color:'#ff6fae'}).setOrigin(.5).setDepth(30);this.tweens.add({targets:h,y:420,scale:1.35,duration:650,yoyo:true,repeat:1});}),
+      ()=>this.say('Una paloma los observa desde la oscuridad…',()=>{this.spawnBirds(2);const omen=this.add.circle(1050,260,12,0xff49b0,.7).setDepth(46);this.tweens.add({targets:omen,alpha:.1,scale:1.8,duration:500,yoyo:true,repeat:2,onComplete:()=>omen.destroy()});}),
+      ()=>this.say('MATEO: “Eso ya no parece coincidencia.”\nPAOLA: “Quédate cerca.”',()=>{this.spawnBirds(12);this.add.rectangle(640,360,1280,720,0x090512,.2).setDepth(23);this.cameras.main.shake(120,.002);}),
+      ()=>this.say('PECHO PALOMA: “Al fin.”\nMATEO: “¿Al fin qué?”',()=>{this.villain.setAlpha(1);this.aura.setAlpha(1);this.spawnBirds(8,this.villain);this.tweens.add({targets:[this.villain,this.aura],y:'-=35',duration:700,ease:'Back.easeOut'});this.playCue('magic');}),
+      ()=>this.say('PECHO PALOMA: “Al fin te encuentro sin tanta gente alrededor.”\nPAOLA: “¿Lo conoces?”\nMATEO: “No.”'),
+      ()=>this.say('PECHO PALOMA: “Pero yo sí lo conozco. Mateo… llevo mucho tiempo observándote.”\n“He visto cómo sonríes… y cómo siempre eliges estar con ella.”'),
+      ()=>this.say('PAOLA: “Eso no es amor.”\nPECHO PALOMA: “Tú no decides lo que siento.”\nMATEO: “Y tú tampoco decides por mí.”'),
+      ()=>this.say('PECHO PALOMA: “Entonces tendré que darte tiempo para entenderlo.”'),
       ()=>this.say('MATEO: “¡Paola!”\nPAOLA: “¡Mateo!”',()=>{this.paola.setFrame(5);this.tweens.add({targets:this.paola,x:610,duration:500});this.closeCage();}),
-      ()=>this.say('La jaula mágica se cierra.\nMATEO: “¡Paola!”',()=>{this.mateo.setFrame(3);this.tweens.add({targets:this.mateo,x:'+=7',duration:90,yoyo:true,repeat:5});}),
+      ()=>this.say('CLANG.\nMATEO: “¡No la toques!”\nPECHO PALOMA: “Algún día me mirarás así a mí.”\nMATEO: “No.”',()=>{this.mateo.setFrame(3);this.tweens.add({targets:this.mateo,x:'+=7',duration:90,yoyo:true,repeat:5});}),
       ()=>this.say('Paola intenta alcanzarlo…',()=>this.magicPush()),
-      ()=>this.say('PECHO PALOMA: “Si de verdad lo amas… ven por él.”',()=>this.flyToCastle()),
+      ()=>this.say('PECHO PALOMA: “Entonces ven al castillo.”\nPAOLA: “¡NO TE VOY A DEJAR!”',()=>this.flyToCastle()),
       ()=>{},
-      ()=>this.say('MATEO: “Paola va a venir.”\nPECHO PALOMA: “Eso está por verse.”'),
+      ()=>this.say('MATEO: “Paola va a venir.”\nPECHO PALOMA: “Eso espero.”'),
       ()=>this.showGardenResolve(),
       ()=>this.showTitle(),
     ];if(this.step<steps.length)steps[this.step++]();
   }
 
-  showTitle(){if(this.locked)return;this.locked=true;this.dialogPanel.setVisible(false);[this.paola,this.mateo,this.villain,this.cage].filter(Boolean).forEach(o=>o.setVisible(false));this.text.setScrollFactor(0).setText('♥ RESCATE DE AMOR ♥\n\nUna aventura hecha con amor.\n\nATRAVIESA EL REINO\nREÚNE LOS 5 RECUERDOS\nRESCATA A MATEO\n\n[ COMENZAR RESCATE ]').setFontSize(29).setAlpha(1).setPosition(640,335).setDepth(110);this.text.setInteractive({useHandCursor:true}).once('pointerdown',()=>this.finish());this.input.keyboard.once('keydown-ENTER',()=>this.finish());this.input.keyboard.once('keydown-SPACE',()=>this.finish());}
+  showTitle(){if(this.locked)return;this.locked=true;this.dialogPanel.setVisible(false);[this.paola,this.mateo,this.villain,this.cage].filter(Boolean).forEach(o=>o.setVisible(false));this.text.setScrollFactor(0).setText('♥ RESCATE DE AMOR ♥\n\nUna aventura hecha con amor.\n\nATRAVIESA EL REINO\nENCUENTRA LAS 3 CARTAS\nRESCATA A MATEO\n\n[ COMENZAR RESCATE ]').setFontSize(29).setAlpha(1).setPosition(640,335).setDepth(110);this.text.setInteractive({useHandCursor:true}).once('pointerdown',()=>this.finish());this.input.keyboard.once('keydown-ENTER',()=>this.finish());this.input.keyboard.once('keydown-SPACE',()=>this.finish());}
   finish(){this.cameras.main.fadeOut(650,7,4,18);this.time.delayedCall(670,()=>this.scene.start('Level1Scene'));}
 }

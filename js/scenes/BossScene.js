@@ -1,5 +1,5 @@
 import Player from '../entities/Player.js?v=20260819-final-world-14';
-import UIManager from '../ui/UIManager.js';
+import UIManager from '../ui/UIManager.js?v=20260820-professional-final-22';
 import AudioManager from '../systems/AudioManager.js';
 import ParticleManager from '../systems/ParticleManager.js';
 import { gameState } from '../config.js';
@@ -61,6 +61,8 @@ export default class BossScene extends Phaser.Scene {
     // UI & Audio
     this.uiManager = new UIManager(this);
     this.particleManager = new ParticleManager(this);
+    this.uiManager.updateHud({health:this.player.health,roses:gameState.roses||0,cards:(gameState.memories||[]).filter(x=>/^card[123]$/.test(x)).length,power:this.player.canChargeLove?'corazón imparable':'impulso de amor'});
+    this.events.on('player-hit',health=>this.uiManager.updateHud({health,roses:gameState.roses||0,cards:(gameState.memories||[]).filter(x=>/^card[123]$/.test(x)).length,power:this.player.canChargeLove?'corazón imparable':'impulso de amor'}));
 
     // Boss health bar
     this.createHealthBar();
@@ -98,8 +100,8 @@ export default class BossScene extends Phaser.Scene {
     this.bossIntroPanel=this.add.rectangle(640,360,900,190,0x140b20,.94).setStrokeStyle(5,0xd09a60).setDepth(180);
     this.bossIntroText=this.add.text(640,360,'MATEO: “¡Paola!”\nPAOLA: “¡Mateo!”',{fontFamily:'monospace',fontSize:'25px',color:'#ffe9ce',align:'center',lineSpacing:9}).setOrigin(.5).setDepth(181);
     this.bossIntroLines=[
-      'PECHO PALOMA: “Vaya… de verdad llegaste hasta aquí.”\nPAOLA: “Déjalo ir.”',
-      'PECHO PALOMA: “¿Después de todo esto? Ni hablar.”\nPAOLA: “Entonces tendré que obligarte.”',
+      'PECHO PALOMA: “No des otro paso. He esperado demasiado tiempo por él.”\nPAOLA: “Él nunca fue tuyo.”',
+      'MATEO: “Ella tiene razón. Yo amo a Paola.”\nPECHO PALOMA: “Entonces… tendré que derrotarla.”',
       'JEFE FINAL\n♛ PECHO PALOMA ♛\nREINA DE LAS PALOMAS\n\n3 · 2 · 1 · COMBATE',
     ];
   }
@@ -162,7 +164,7 @@ export default class BossScene extends Phaser.Scene {
     }
     if (this.phase !== this.lastAnnouncedPhase) {
       this.lastAnnouncedPhase = this.phase;
-      const line = this.phase === 2 ? 'PECHO PALOMA: “¡Él debería estar conmigo!”\nPAOLA: “El amor no se obliga.”' : 'PECHO PALOMA: “¡Entonces te quedarás aquí también!”\nPAOLA: “Esto termina ahora.”';
+      const line = this.phase === 2 ? 'PECHO PALOMA: “¿Por qué ella?”\nMATEO: “Porque la amo.”\nPECHO PALOMA: “¡SILENCIO!”' : 'PECHO PALOMA: “¡Llevo tanto tiempo mirando desde lejos!”\nPAOLA: “Nunca lo tuviste.”';
       this.uiManager.showMessage(line, '#ffe0ef', 2600);
     }
   }
@@ -309,7 +311,7 @@ export default class BossScene extends Phaser.Scene {
       ease: 'Cubic.easeIn',
     });
     const crown=this.add.text(this.boss.x,this.boss.y-75,'♛',{fontSize:'44px',color:'#f1c454'}).setOrigin(.5).setDepth(40);this.tweens.add({targets:crown,x:900,y:555,angle:160,duration:1100,ease:'Bounce.easeOut'});
-    this.uiManager.showMessage('PECHO PALOMA: “No… esto no puede estar pasando…”\nPAOLA: “El amor no se roba.”','#ffe2ef',2300);
+    this.uiManager.showMessage('PECHO PALOMA: “Solo quería que me miraras como la miras a ella…”\nMATEO: “Eso no se puede obligar.”','#ffe2ef',3200);
 
     // Victory particle burst
     for (let i = 0; i < 3; i++) {
@@ -330,7 +332,9 @@ export default class BossScene extends Phaser.Scene {
     gameState.currentScene = 'EndingScene';
     gameState.achievements = [...new Set([...(gameState.achievements || []), 'Reina derrotada', 'Sin miedo a las palomas'])];
     localStorage.setItem('rescate-de-amor-save', JSON.stringify(gameState));
-    this.victoryTransitionIn=1500;
+    this.time.delayedCall(3200,()=>this.uiManager.showMessage('PECHO PALOMA: “Llevo enamorada de ti mucho tiempo. Ahora lo sé.”\nPAOLA: “Entonces abre la jaula.”','#ffe2ef',3200));
+    this.time.delayedCall(5700,()=>{this.cell?.setAlpha(.35);this.uiManager.showMessage('El candado pierde su magia. Pecho Paloma lo deja libre.','#ffe9b0',1900);});
+    this.victoryTransitionIn=7600;
   }
 
   update(time, delta) {
