@@ -6,7 +6,7 @@ export default class IntroScene extends Phaser.Scene {
     this.makeBirdTexture();this.makePark();
     this.paola=this.add.image(515,570,'paola-final',4).setScale(1.08).setDepth(20);
     this.mateo=this.add.image(665,568,'mateo-final',2).setScale(1.06).setFlipX(true).setAngle(-3).setDepth(20);
-    this.tweens.add({targets:[this.paola,this.mateo],y:'-=3',duration:1050,yoyo:true,repeat:-1,ease:'Sine.easeInOut'});
+    this.tweens.add({targets:this.paola,scaleY:1.095,scaleX:1.073,duration:1150,yoyo:true,repeat:-1,ease:'Sine.easeInOut'});this.tweens.add({targets:this.mateo,scaleY:1.075,scaleX:1.045,duration:1320,yoyo:true,repeat:-1,ease:'Sine.easeInOut'});
     this.villain=this.add.image(1030,370,'pecho-final',0).setScale(1.32).setAlpha(0).setDepth(27);
     this.aura=this.add.circle(1030,370,110,0xd93b9a,.16).setAlpha(0).setDepth(26);
     this.dialogPanel=this.add.rectangle(640,126,1000,150,0x160d26,.92).setStrokeStyle(5,0xc45b87).setDepth(90);
@@ -57,7 +57,7 @@ export default class IntroScene extends Phaser.Scene {
       ()=>this.say('MATEO: “Por esto… y por estar contigo.”\nPAOLA: “Qué cursi.”\nMATEO: “Pero estás sonriendo.”\nPAOLA: “No dije que no me gustara.”',()=>{const h=this.add.text(590,455,'♥',{fontSize:'40px',color:'#ff6fae'}).setOrigin(.5).setDepth(30);this.tweens.add({targets:h,y:420,scale:1.35,duration:650,yoyo:true,repeat:1});}),
       ()=>this.say('Una paloma los observa desde la oscuridad…',()=>{this.spawnBirds(2);const omen=this.add.circle(1050,260,12,0xff49b0,.7).setDepth(46);this.tweens.add({targets:omen,alpha:.1,scale:1.8,duration:500,yoyo:true,repeat:2,onComplete:()=>omen.destroy()});}),
       ()=>this.say('MATEO: “Eso ya no parece coincidencia.”\nPAOLA: “Quédate cerca.”',()=>{this.tweens.killTweensOf([this.paola,this.mateo]);this.paola.setFrame(0).setPosition(500,538).setScale(1.35);this.mateo.setFrame(0).setPosition(680,538).setScale(1.3).setAngle(0);this.spawnBirds(12);this.add.rectangle(640,360,1280,720,0x090512,.2).setDepth(23);this.cameras.main.shake(120,.002);}),
-      ()=>this.say('PECHO PALOMA: “Al fin.”\nMATEO: “¿Al fin qué?”',()=>{this.villain.setAlpha(1);this.aura.setAlpha(1);this.spawnBirds(8,this.villain);this.tweens.add({targets:[this.villain,this.aura],y:'-=35',duration:700,ease:'Back.easeOut'});this.playCue('magic');}),
+      ()=>this.say('PECHO PALOMA: “Al fin.”\nMATEO: “¿Al fin qué?”',()=>{this.villain.setAlpha(1);this.aura.setAlpha(1);this.spawnBirds(8,this.villain);for(let i=0;i<14;i++){const p=this.add.ellipse(900+Math.random()*330,420+Math.random()*180,4,9,0xff8fb9,.7).setDepth(25);this.tweens.add({targets:p,x:p.x-240,y:p.y-80,angle:220,alpha:0,duration:650+Math.random()*350,onComplete:()=>p.destroy()});}this.cameras.main.zoomTo(1.04,650,'Sine.easeOut');this.tweens.add({targets:[this.villain,this.aura],y:'-=35',duration:700,ease:'Back.easeOut'});this.playCue('magic');}),
       ()=>this.say('PECHO PALOMA: “Al fin te encuentro sin tanta gente alrededor.”\nPAOLA: “¿Lo conoces?”\nMATEO: “No.”'),
       ()=>this.say('PECHO PALOMA: “Pero yo sí lo conozco. Mateo… llevo mucho tiempo observándote.”\n“He visto cómo sonríes… y cómo siempre eliges estar con ella.”'),
       ()=>this.say('PAOLA: “Eso no es amor.”\nPECHO PALOMA: “Tú no decides lo que siento.”\nMATEO: “Y tú tampoco decides por mí.”'),

@@ -81,7 +81,12 @@ export default class BaseLevelScene extends Phaser.Scene {
     for(let i=0;i<36;i++){ const p=this.add.circle(Math.random()*this.dataDef.width,400+Math.random()*250,2+Math.random()*3,this.dataDef.accent,.65); this.tweens.add({targets:p,y:p.y-35,alpha:.15,duration:1800+Math.random()*1800,yoyo:true,repeat:-1}); }
   }
 
-  makePlatforms() { this.dataDef.platforms.forEach((p,i)=>{ const r=this.add.rectangle(p.x,p.y,p.w,26,this.dataDef.platform).setStrokeStyle(3,this.dataDef.trim); this.physics.add.existing(r,true); this.solids.add(r); const top=this.add.rectangle(p.x,p.y-14,p.w+4,7,this.dataDef.theme==='castle'?0x8b6c92:0x548b58).setDepth(8);for(let k=0;k<Math.max(3,p.w/28);k++){if(this.dataDef.theme!=='castle')this.add.triangle(p.x-p.w/2+k*28,p.y-21,0,10,5,0,10,10,0x76ae62).setDepth(8);else this.add.rectangle(p.x-p.w/2+12+k*32,p.y,2,19,0x382d46,.8).setDepth(8);} if(i%2===0) for(let k=0;k<3;k++) this.add.circle(p.x-p.w/3+k*p.w/3,p.y-23,4,this.dataDef.accent).setDepth(9); }); }
+  makePlatforms(){this.dataDef.platforms.forEach((p,i)=>{
+    const r=this.add.rectangle(p.x,p.y,p.w,26,this.dataDef.platform).setStrokeStyle(3,this.dataDef.trim);this.physics.add.existing(r,true);this.solids.add(r);
+    this.add.rectangle(p.x,p.y-14,p.w+4,7,this.dataDef.theme==='castle'?0x8b6c92:this.dataDef.theme==='garden'?0x64795a:0x548b58).setDepth(8);
+    for(let k=0;k<Math.max(3,p.w/28);k++){const x=p.x-p.w/2+12+k*28;if(this.dataDef.theme==='forest'){this.add.triangle(x,p.y-22,0,10,5,0,10,10,0x76ae62).setDepth(8);if(k%3===0)this.add.ellipse(x+7,p.y+5,22,5,0x3d6545,.8).setDepth(9);}else if(this.dataDef.theme==='garden'){this.add.arc(x,p.y-21,8,180,360,false,0x3f7049,.9).setDepth(8);if(k%2===0)this.add.circle(x+5,p.y-24,4,k%4?0xe05288:0xff9ebc).setDepth(9);}else{this.add.rectangle(x,p.y,2,19,0x382d46,.8).setDepth(8);if(k%3===0)this.add.text(x,p.y-2,'ᚱ',{fontFamily:'monospace',fontSize:'11px',color:'#c078b8'}).setOrigin(.5).setDepth(9);}}
+    if(this.dataDef.theme==='forest'){this.add.ellipse(p.x,p.y+10,p.w*.72,8,0x263b2c,.7).setDepth(7);for(let n=0;n<3;n++)this.add.line(0,0,p.x-p.w*.35+n*p.w*.3,p.y+2,p.x-p.w*.25+n*p.w*.3,p.y+21,0x5b4637,.85).setOrigin(0,0).setDepth(9);}else if(this.dataDef.theme==='garden'){for(let n=0;n<3;n++)this.add.arc(p.x-p.w*.3+n*p.w*.3,p.y+6,11,40,300,false,0x397047,.7).setDepth(9);}else{for(let n=0;n<Math.floor(p.w/42);n++)this.add.rectangle(p.x-p.w/2+22+n*42,p.y+7,36,2,0x75627d,.55).setDepth(9);}
+  });}
 
   makeHazards(){const layouts={forest:[820,1450,2110],garden:[1080,1780,2670],castle:[820,1510,2350,2990]},key=this.dataDef.theme==='castle'?'hazard-flame':this.dataDef.theme==='garden'?'hazard-thorns':'hazard-puddle';this.hazards=[];(layouts[this.dataDef.theme]||[]).forEach((x,i)=>{const h=this.add.image(x,642,key).setDepth(12).setScale(this.dataDef.theme==='castle'?1:1.08);this.physics.add.existing(h,true);h.body.setSize(Math.min(42,h.width-8),Math.min(18,h.height-6));h.phase=i*430;h.warning=this.add.ellipse(x,646,74,24,this.dataDef.accent,.08).setStrokeStyle(2,this.dataDef.accent,.65).setDepth(11);this.hazards.push(h);this.physics.add.overlap(this.player,h,()=>{if(h.dangerous)this.player.takeDamage(1);});});}
 
@@ -112,12 +117,13 @@ export default class BaseLevelScene extends Phaser.Scene {
     const line=this.add.text(640,355,`${name}\n\n“${msg}”`,{fontFamily:'monospace',fontSize:'23px',color:'#51203e',align:'center',lineSpacing:10}).setOrigin(.5);
     const button=this.add.text(640,465,'CONTINUAR',{fontFamily:'monospace',fontSize:'18px',color:'#fff',backgroundColor:'#7b315f',padding:{x:20,y:10}}).setOrigin(.5).setInteractive({useHandCursor:true});
     layer.add([shade,glow,paper,title,line,button]);layer.setScale(.68).setAlpha(0);
+    const continueZone=this.add.zone(640,465,240,80).setScrollFactor(0).setDepth(1500).setInteractive({useHandCursor:true});this.cardContinueZone=continueZone;
     this.tweens.add({targets:layer,scale:1,alpha:1,duration:380,ease:'Back.easeOut'});this.tweens.add({targets:glow,scale:1.12,alpha:.25,duration:650,yoyo:true,repeat:-1});
     this.particleManager.burst(640,345,0xff6eac,32,280);this.audioManager.playSfx('checkpoint');
-    let closing=false;
-    const cleanup=()=>{shade.removeInteractive();button.removeInteractive();this.input.keyboard.off('keydown-ENTER',close);this.input.keyboard.off('keydown-SPACE',close);};
-    const close=()=>{if(closing||!layer.active)return;closing=true;cleanup();this.tweens.add({targets:layer,alpha:0,scale:.9,duration:220,onComplete:()=>{if(layer.active)layer.destroy();this.cardOverlay=null;this.cardPickupInProgress=false;this.paused=false;this.physics.resume();this.uiManager.container.setVisible(true);this.refreshHud();this.uiManager.showMessage('SALIDA DESBLOQUEADA','#ffe7a8',1500);}});};
-    shade.once('pointerdown',close);button.once('pointerdown',close);this.input.keyboard.once('keydown-ENTER',close);this.input.keyboard.once('keydown-SPACE',close);
+    let closing=false,cardCanClose=false,enableCloseTimer=null,close;
+    const cleanup=()=>{enableCloseTimer?.remove(false);shade.off('pointerdown',close).removeInteractive();button.off('pointerdown',close).removeInteractive();if(continueZone.active){continueZone.off('pointerdown',close);continueZone.destroy();}this.cardContinueZone=null;this.input.keyboard.off('keydown-ENTER',close);this.input.keyboard.off('keydown-SPACE',close);};
+    close=()=>{if(!cardCanClose||closing||!layer.active)return;closing=true;cleanup();this.tweens.killTweensOf([layer,glow]);this.tweens.add({targets:layer,alpha:0,scale:.9,duration:220,onComplete:()=>{if(layer.active)layer.destroy();this.cardOverlay=null;this.cardPickupInProgress=false;this.paused=false;this.physics.resume();this.uiManager.container.setVisible(true).setAlpha(1);this.refreshHud();this.uiManager.showMessage('SALIDA DESBLOQUEADA','#ffe7a8',1500);}});};
+    enableCloseTimer=this.time.delayedCall(300,()=>{if(!layer.active)return;cardCanClose=true;continueZone.once('pointerdown',close);button.once('pointerdown',close);shade.once('pointerdown',close);this.input.keyboard.once('keydown-ENTER',close);this.input.keyboard.once('keydown-SPACE',close);});
     this.events.once('shutdown',cleanup);
   }
 

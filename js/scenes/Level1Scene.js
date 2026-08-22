@@ -1,4 +1,4 @@
-import BaseLevelScene from './BaseLevelScene.js?v=20260820-pickup-combat-24';
+import BaseLevelScene from './BaseLevelScene.js?v=20260821-card-picnic-polish-27';
 export default class Level1Scene extends BaseLevelScene {
   constructor(){ super('Level1Scene',{
     title:'NIVEL 1 · BOSQUE DE LOS RECUERDOS', objective:'Encuentra el primer recuerdo.  A/D mover · SPACE saltar · X atacar',
