@@ -1,14 +1,1 @@
-export const FINAL_LETTER = `Mi amor,
-
-Gracias por ser mi compañera,
-mi mejor amiga y mi lugar seguro.
-
-Eres la razón por la que sonrío
-cada día y por la que quiero
-ser mejor persona.
-
-Gracias por tanto amor,
-paciencia y por elegirnos siempre.
-
-Te amo hoy, mañana
-y por siempre. ❤️`;
+export const FINAL_LETTER = `Amorshito peshosho te dedico esta carta en este jueguito porque te amo mucho y quise hacer algo diferente y quiero expresar lo mucho que te amo de muchas formas, sé que peleamos mucho discutimos pero quisiera decirte que a pesar de todo yo estaré contigo siempre que solucionaré todo y mejoraré para ti pero quiero que cumplamos nuestras promesas que seamos mejores que dejemos los miedos y que tratemos de resolver todo entendernos el uno al otro y facilitarnos las cosas obedecernos no hacer pashar colajes al otro y mucho más, Mamosh sé que no e sido el mejor chico tmb tengo mis errores pero quiero que sepas que yo te tendré siempre un lugar en mi corazón que tú eres la chica que yo quiero en mi vida con la que quiero casarme y tener muchos hijos con la que quiero pasar el resto de mis días y quiero lograr un gran futuro junto a ti, eres la luz de mis ojos te amo mucho mi corazón feliz aniversario ❤️`;
