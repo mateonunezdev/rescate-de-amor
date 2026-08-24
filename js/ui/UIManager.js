@@ -14,7 +14,7 @@ export default class UIManager {
     this.container = this.scene.add.container(24, 18).setScrollFactor(0).setDepth(1000);
     this.container.setName('player-hud');
 
-    const bg = this.scene.add.rectangle(0, 0, 370, 82, 0x160d24, 0.96).setStrokeStyle(3, 0xf2c46f, 0.9);
+    const bg = this.scene.add.rectangle(0, 0, 370, 112, 0x160d24, 0.96).setStrokeStyle(3, 0xf2c46f, 0.9);
     bg.setOrigin(0, 0);
     this.container.add(bg);
 
@@ -27,9 +27,12 @@ export default class UIManager {
     this.rosesText = this.scene.add.text(158, 37, '0', { fontFamily: 'monospace', fontSize: '18px', color: '#ffffff' });
     this.lettersText = this.scene.add.text(270, 37, '0 / 3', { fontFamily: 'monospace', fontSize: '18px', color: '#ffffff' });
     this.powerText = this.scene.add.text(246, 61, '—', { fontFamily: 'monospace', fontSize: '10px', color: '#9de5ff' });
+    this.shieldText = this.scene.add.text(16, 87, '🛡 ESCUDO · LISTO [V]', { fontFamily: 'monospace', fontSize: '13px', color: '#ffd9ef' });
 
-    this.container.add([lifeLabel, rosesLabel, lettersLabel, powerLabel, this.healthText, this.rosesText, this.lettersText, this.powerText]);
+    this.container.add([lifeLabel, rosesLabel, lettersLabel, powerLabel, this.healthText, this.rosesText, this.lettersText, this.powerText,this.shieldText]);
   }
+
+  updateShield(active,cooldown,maxCooldown=6500){if(!this.shieldText)return;if(active>0)this.shieldText.setText(`🛡 ESCUDO · ACTIVO ${(active/1000).toFixed(1)}s`).setColor('#ffffff');else if(cooldown>0)this.shieldText.setText(`🛡 ESCUDO · RECARGANDO ${Math.ceil(cooldown/1000)}s`).setColor('#c99db8');else this.shieldText.setText('🛡 ESCUDO · LISTO [V]').setColor('#ffd9ef');}
 
   updateHud({ health, roses, letters, cards, power }) {
     if (this.healthText) this.healthText.setText('♥'.repeat(Math.max(0, health)));

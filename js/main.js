@@ -2,10 +2,10 @@ import { GAME_CONFIG } from './config.js?v=20260820-professional-final-22';
 import BootScene from './scenes/BootScene.js?v=20260823-professional-polish-29';
 import MenuScene from './scenes/MenuScene.js?v=20260819-final-art-4';
 import IntroScene from './scenes/IntroScene.js?v=20260821-card-picnic-polish-27';
-import Level1Scene from './scenes/Level1Scene.js?v=20260823-master-final-30';
-import Level2Scene from './scenes/Level2Scene.js?v=20260823-master-final-30';
-import Level3Scene from './scenes/Level3Scene.js?v=20260823-master-final-30';
-import BossScene from './scenes/BossScene.js?v=20260823-master-final-30';
+import Level1Scene from './scenes/Level1Scene.js?v=20260823-ai-shield-polish-31';
+import Level2Scene from './scenes/Level2Scene.js?v=20260823-ai-shield-polish-31';
+import Level3Scene from './scenes/Level3Scene.js?v=20260823-ai-shield-polish-31';
+import BossScene from './scenes/BossScene.js?v=20260823-ai-shield-polish-31';
 import EndingScene from './scenes/EndingScene.js?v=20260823-master-final-30';
 import SecretScene from './scenes/SecretScene.js?v=20260823-master-final-30';
 

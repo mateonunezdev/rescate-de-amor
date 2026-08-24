@@ -31,8 +31,8 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.body.setOffset(24,18);
 
     this.cursors = scene.input.keyboard.createCursorKeys();
-    this.keys = scene.input.keyboard.addKeys('A,D,S,W,SHIFT,SPACE,X,K,Z,J,C,L,E');
-    this.attackCooldown = 0;
+    this.keys = scene.input.keyboard.addKeys('A,D,S,W,SHIFT,SPACE,X,K,Z,J,C,L,E,V');
+    this.attackCooldown = 0;this.shieldActive=0;this.shieldCooldown=0;this.shieldDuration=1800;this.shieldCooldownMax=6500;this.shieldFx=null;
     this.loveCharge=0;this.chargeFxTimer=0;this.comboStep=0;this.comboTimer=0;this.airSlamming=false;this.specialCooldown=0;this.combatPoseUntil=0;this.combatPoseFrame=6;
   }
 
@@ -48,13 +48,16 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     const attackReleased = Phaser.Input.Keyboard.JustUp(this.keys.X)||Phaser.Input.Keyboard.JustUp(this.keys.K);
     const meleePressed = Phaser.Input.Keyboard.JustDown(this.keys.Z)||Phaser.Input.Keyboard.JustDown(this.keys.J);
     const specialPressed = Phaser.Input.Keyboard.JustDown(this.keys.C)||Phaser.Input.Keyboard.JustDown(this.keys.L);
+    const shieldPressed = Phaser.Input.Keyboard.JustDown(this.keys.V);
 
     if (jumpPressed) {
       this.jumpBufferTimer = this.jumpBufferWindow;
     }
     this.jumpBufferTimer = Math.max(0, this.jumpBufferTimer - delta);
     this.attackCooldown = Math.max(0, this.attackCooldown - delta);
-    this.comboTimer=Math.max(0,this.comboTimer-delta);this.specialCooldown=Math.max(0,this.specialCooldown-delta);if(this.comboTimer===0)this.comboStep=0;
+    this.comboTimer=Math.max(0,this.comboTimer-delta);this.specialCooldown=Math.max(0,this.specialCooldown-delta);this.shieldActive=Math.max(0,this.shieldActive-delta);this.shieldCooldown=Math.max(0,this.shieldCooldown-delta);if(this.comboTimer===0)this.comboStep=0;
+    if(shieldPressed&&this.shieldCooldown<=0)this.activateLoveShield();if(this.shieldFx?.active){this.shieldFx.setPosition(this.x,this.y);this.shieldFx.setVisible(this.shieldActive>0);}
+    this.scene.uiManager?.updateShield?.(this.shieldActive,this.shieldCooldown,this.shieldCooldownMax);
 
     this.isGrounded = this.body.blocked.down || this.body.touching.down;
     if (this.isGrounded && !this.wasGrounded && this.body.velocity.y >= 0) {
@@ -129,7 +132,15 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
   playCombatPose(frame,duration=180,angle=0){this.combatPoseFrame=frame;this.combatPoseUntil=this.scene.time.now+duration;this.scene.tweens.killTweensOf(this);this.setAngle(-angle*.35);this.scene.tweens.add({targets:this,angle,scaleX:this.baseScale*(frame===9?1.1:1.04),scaleY:this.baseScale*(frame===9?.94:1),duration:duration*.45,yoyo:true,ease:'Sine.easeOut'});}
 
+  activateLoveShield(){
+    this.shieldActive=this.shieldDuration;this.shieldCooldown=this.shieldCooldownMax;this.scene.audioManager?.playSfx('checkpoint');
+    if(this.shieldFx?.active)this.shieldFx.destroy();const fx=this.scene.add.container(this.x,this.y).setDepth(45);this.shieldFx=fx;const outer=this.scene.add.ellipse(0,0,112,142,0xff72b5,.12).setStrokeStyle(7,0xffc8e3,.95);const inner=this.scene.add.ellipse(0,0,91,121,0xffffff,.045).setStrokeStyle(3,0xff579f,.8);const heart=this.scene.add.text(0,0,'♥',{fontFamily:'monospace',fontSize:'25px',color:'#fff3fa',stroke:'#c52f78',strokeThickness:4}).setOrigin(.5);fx.add([outer,inner,heart]);for(let i=0;i<5;i++){const rune=this.scene.add.text(0,0,i%2?'✦':'♥',{fontFamily:'monospace',fontSize:'12px',color:'#ffd8ed'}).setOrigin(.5);fx.add(rune);this.scene.tweens.add({targets:rune,angle:360,x:Math.cos(i/5*Math.PI*2)*52,y:Math.sin(i/5*Math.PI*2)*64,duration:650+i*90,yoyo:true,repeat:-1});}this.scene.tweens.add({targets:[outer,inner],scale:1.08,alpha:.55,duration:240,yoyo:true,repeat:-1});this.scene.time.delayedCall(this.shieldDuration,()=>fx.active&&this.scene.tweens.add({targets:fx,alpha:0,scale:.8,duration:180,onComplete:()=>fx.destroy()}));
+  }
+
+  shieldImpact(x=this.x,y=this.y){if(!this.shieldFx?.active)return;this.shieldFx.setAlpha(1.5);this.scene.tweens.add({targets:this.shieldFx,scale:1.18,alpha:1,duration:90,yoyo:true});this.scene.particleManager?.sparkles(x,y,0xffd5ed,10);this.scene.cameras.main.shake(55,.0025);this.scene.audioManager?.playSfx('bossHit');}
+
   takeDamage(amount = 1) {
+    if(this.shieldActive>0){this.shieldImpact();return false;}
     if (this.invulnerable > 0) return;
     this.health = Math.max(0, this.health - amount);
     this.invulnerable = 900;
@@ -141,6 +152,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     if (this.health <= 0) {
       this.scene.events.emit('game-over');
     }
+    return true;
   }
 
   heal(amount = 1) {

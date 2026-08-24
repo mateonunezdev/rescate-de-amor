@@ -1,12 +1,12 @@
-import Player from '../entities/Player.js?v=20260820-pickup-combat-24';
-import Enemy from '../entities/Enemy.js?v=20260823-master-final-30';
+import Player from '../entities/Player.js?v=20260823-ai-shield-polish-31';
+import Enemy from '../entities/Enemy.js?v=20260823-ai-shield-polish-31';
 import Collectible from '../entities/Collectible.js?v=20260823-master-final-30';
-import UIManager from '../ui/UIManager.js?v=20260821-boss-letter-polish-28';
+import UIManager from '../ui/UIManager.js?v=20260823-ai-shield-polish-31';
 import AudioManager from '../systems/AudioManager.js';
 import ParticleManager from '../systems/ParticleManager.js';
 import SaveManager from '../systems/SaveManager.js';
 import { gameState } from '../config.js';
-import { TextureFactory } from '../utils/TextureFactory.js?v=20260823-professional-polish-29';
+import { TextureFactory } from '../utils/TextureFactory.js?v=20260823-ai-shield-polish-31';
 
 const MEMORY = {
   heart: ['CORAZÓN', 'Contigo, cada latido es especial.'],
@@ -40,7 +40,7 @@ export default class BaseLevelScene extends Phaser.Scene {
     this.uiManager = new UIManager(this); this.refreshHud();
     this.projectiles = this.physics.add.group({ allowGravity: false });
     this.enemies = this.physics.add.group();
-    this.dataDef.enemies.forEach(e => { const enemy = new Enemy(this, e.x, e.y, e); this.enemies.add(enemy); });
+    this.dataDef.enemies.forEach(e => { const enemy=new Enemy(this,e.x,e.y,e);this.spawnEnemyOnGround(enemy,e.x,e.y);this.enemies.add(enemy); });
     this.general=this.enemies.getChildren().find(e=>e.miniBoss||e.type==='general');if(this.general){this.generalMaxHealth=this.general.health;this.generalHud=this.add.container(640,128).setScrollFactor(0).setDepth(950).setVisible(false);const gb=this.add.rectangle(0,0,410,46,0x1a1025,.94).setStrokeStyle(3,0xe4b75d);this.generalFill=this.add.rectangle(-190,12,380,10,0xc24983).setOrigin(0,.5);const gt=this.add.text(0,-9,`⚔ ${this.general.displayName||'GENERAL PALOMO'} ⚔`,{fontFamily:'monospace',fontSize:'17px',color:'#ffe6ad'}).setOrigin(.5);this.generalHud.add([gb,this.generalFill,gt]);}
     this.setupEncounterDialogues();
     this.physics.add.collider(this.enemies, this.solids);
@@ -49,7 +49,7 @@ export default class BaseLevelScene extends Phaser.Scene {
     this.makeCollectibles(); this.makeCheckpoint(); this.makeExit(); this.makePause(); this.makeMobileControls();
     this.events.on('player-hit', () => { gameState.health = this.player.health; this.refreshHud(); });
     this.events.on('game-over', () => this.showGameOver());
-    this.add.text(32, 102, `${this.dataDef.title}\n${this.dataDef.objective}`, { fontFamily:'monospace', fontSize:'17px', color:'#ffe4ac', lineSpacing:7, stroke:'#28152f', strokeThickness:4 }).setScrollFactor(0).setDepth(200);
+    this.add.text(32, 148, `${this.dataDef.title}\n${this.dataDef.objective}`, { fontFamily:'monospace', fontSize:'17px', color:'#ffe4ac', lineSpacing:7, stroke:'#28152f', strokeThickness:4 }).setScrollFactor(0).setDepth(200);
     if(this.scene.key==='Level1Scene'){const controls=this.add.text(640,625,'A/D MOVER · SPACE SALTAR · SHIFT CORRER\nZ/J COMBO · X/K ENERGÍA/CARGA · ↓+Z GOLPE AÉREO · C/L ESPECIAL · E INTERACTUAR',{fontFamily:'monospace',fontSize:'13px',color:'#fff0cf',align:'center',lineSpacing:5,backgroundColor:'#21132b',padding:{x:14,y:8}}).setOrigin(.5).setScrollFactor(0).setDepth(1050);this.tweens.add({targets:controls,alpha:0,y:605,duration:700,delay:9000,onComplete:()=>controls.destroy()});}
   }
 
@@ -58,6 +58,10 @@ export default class BaseLevelScene extends Phaser.Scene {
     if(!target)return;
     const lines=this.scene.key==='Level1Scene'?[['CAPITÁN PALOMA','Hasta aquí llegaste.','right'],['PAOLA','Solo dime dónde está Mateo.','left'],['CAPITÁN PALOMA','En un lugar al que nunca llegarás.','right'],['PAOLA','Entonces tendré que demostrarte lo contrario.','left']]:this.scene.key==='Level2Scene'?[['ARCHIMAGO PALOMA','La reina sabía que vendrías.','right'],['PAOLA','Entonces también sabe que no voy a detenerme.','left'],['ARCHIMAGO PALOMA','Eso lo veremos.','right']]:[['GENERAL PALOMO','Has llegado demasiado lejos.','right'],['PAOLA','No lo suficiente.','left'],['GENERAL PALOMO','Tu viaje termina aquí.','right'],['PAOLA','¿Eso lo decides tú?','left']];
     this.encounterDialogue={target,lines,shown:false};
+  }
+
+  spawnEnemyOnGround(enemy,x,intendedY){
+    if(!enemy.humanoid)return;const feetTarget=intendedY+36,candidates=[{y:648,min:0,max:this.dataDef.width}];this.dataDef.platforms.forEach(p=>{const width=p.renderWidth||Math.round(p.w*1.28);if(x>=p.x-width/2&&x<=p.x+width/2)candidates.push({y:p.y-13,min:p.x-width/2+18,max:p.x+width/2-18});});candidates.sort((a,b)=>Math.abs(a.y-feetTarget)-Math.abs(b.y-feetTarget));const surface=candidates[0];enemy.setPosition(x,surface.y-36);enemy.safeSpawn={x,y:surface.y-36};enemy.spawnX=x;enemy.minX=Math.max(enemy.minX,surface.min);enemy.maxX=Math.min(enemy.maxX,surface.max);if(enemy.minX>enemy.maxX){enemy.minX=surface.min;enemy.maxX=surface.max;}enemy.body.setAllowGravity(true);enemy.body.updateFromGameObject();
   }
 
   startEncounterDialogue(){
@@ -96,14 +100,14 @@ export default class BaseLevelScene extends Phaser.Scene {
     for(let i=0;i<36;i++){ const p=this.add.circle(Math.random()*this.dataDef.width,400+Math.random()*250,2+Math.random()*3,this.dataDef.accent,.65); this.tweens.add({targets:p,y:p.y-35,alpha:.15,duration:1800+Math.random()*1800,yoyo:true,repeat:-1}); }
   }
 
-  makePlatforms(){this.dataDef.platforms.forEach((p,i)=>{
-    const r=this.add.rectangle(p.x,p.y,p.w,26,this.dataDef.platform).setStrokeStyle(3,this.dataDef.trim);this.physics.add.existing(r,true);this.solids.add(r);
-    this.add.rectangle(p.x,p.y-14,p.w+4,7,this.dataDef.theme==='castle'?0x8b6c92:this.dataDef.theme==='garden'?0x64795a:0x548b58).setDepth(8);
-    for(let k=0;k<Math.max(3,p.w/28);k++){const x=p.x-p.w/2+12+k*28;if(this.dataDef.theme==='forest'){this.add.triangle(x,p.y-22,0,10,5,0,10,10,0x76ae62).setDepth(8);if(k%3===0)this.add.ellipse(x+7,p.y+5,22,5,0x3d6545,.8).setDepth(9);}else if(this.dataDef.theme==='garden'){this.add.arc(x,p.y-21,8,180,360,false,0x3f7049,.9).setDepth(8);if(k%2===0)this.add.circle(x+5,p.y-24,4,k%4?0xe05288:0xff9ebc).setDepth(9);}else{this.add.rectangle(x,p.y,2,19,0x382d46,.8).setDepth(8);if(k%3===0)this.add.text(x,p.y-2,'ᚱ',{fontFamily:'monospace',fontSize:'11px',color:'#c078b8'}).setOrigin(.5).setDepth(9);}}
-    if(this.dataDef.theme==='forest'){this.add.ellipse(p.x,p.y+10,p.w*.72,8,0x263b2c,.7).setDepth(7);for(let n=0;n<3;n++)this.add.line(0,0,p.x-p.w*.35+n*p.w*.3,p.y+2,p.x-p.w*.25+n*p.w*.3,p.y+21,0x5b4637,.85).setOrigin(0,0).setDepth(9);}else if(this.dataDef.theme==='garden'){for(let n=0;n<3;n++)this.add.arc(p.x-p.w*.3+n*p.w*.3,p.y+6,11,40,300,false,0x397047,.7).setDepth(9);}else{for(let n=0;n<Math.floor(p.w/42);n++)this.add.rectangle(p.x-p.w/2+22+n*42,p.y+7,36,2,0x75627d,.55).setDepth(9);}
+  makePlatforms(){this.dataDef.platforms.forEach((p,i)=>{const pw=Math.round(p.w*(i%5===0?1.38:i%3===0?1.3:1.24));p.renderWidth=pw;
+    const r=this.add.rectangle(p.x,p.y,pw,26,this.dataDef.platform).setStrokeStyle(3,this.dataDef.trim);this.physics.add.existing(r,true);this.solids.add(r);
+    this.add.rectangle(p.x,p.y-14,pw+4,7,this.dataDef.theme==='castle'?0x8b6c92:this.dataDef.theme==='garden'?0x64795a:0x548b58).setDepth(8);
+    for(let k=0;k<Math.max(3,pw/28);k++){const x=p.x-pw/2+12+k*28;if(this.dataDef.theme==='forest'){this.add.triangle(x,p.y-22,0,10,5,0,10,10,0x76ae62).setDepth(8);if(k%3===0)this.add.ellipse(x+7,p.y+5,22,5,0x3d6545,.8).setDepth(9);}else if(this.dataDef.theme==='garden'){this.add.arc(x,p.y-21,8,180,360,false,0x3f7049,.9).setDepth(8);if(k%2===0)this.add.circle(x+5,p.y-24,4,k%4?0xe05288:0xff9ebc).setDepth(9);}else{this.add.rectangle(x,p.y,2,19,0x382d46,.8).setDepth(8);if(k%3===0)this.add.text(x,p.y-2,'ᚱ',{fontFamily:'monospace',fontSize:'11px',color:'#c078b8'}).setOrigin(.5).setDepth(9);}}
+    if(this.dataDef.theme==='forest'){this.add.ellipse(p.x,p.y+10,pw*.72,8,0x263b2c,.7).setDepth(7);for(let n=0;n<3;n++)this.add.line(0,0,p.x-pw*.35+n*pw*.3,p.y+2,p.x-pw*.25+n*pw*.3,p.y+21,0x5b4637,.85).setOrigin(0,0).setDepth(9);}else if(this.dataDef.theme==='garden'){for(let n=0;n<3;n++)this.add.arc(p.x-pw*.3+n*pw*.3,p.y+6,11,40,300,false,0x397047,.7).setDepth(9);}else{for(let n=0;n<Math.floor(pw/42);n++)this.add.rectangle(p.x-pw/2+22+n*42,p.y+7,36,2,0x75627d,.55).setDepth(9);}
   });}
 
-  makeHazards(){const layouts={forest:[620,880,1160,1430,1690,1970,2240,2500,2760,3220],garden:[580,830,1090,1350,1610,1880,2140,2400,2670,2930,3190,3450,3840],castle:[570,820,1080,1330,1590,1850,2110,2370,2630,2890,3150,3410,3670,3900,4310]},key=this.dataDef.theme==='castle'?'hazard-flame':this.dataDef.theme==='garden'?'hazard-thorns':'hazard-puddle';this.hazards=[];(layouts[this.dataDef.theme]||[]).forEach((x,i)=>{const h=this.add.image(x,642,key).setDepth(12).setScale(this.dataDef.theme==='castle'?1:1.08);this.physics.add.existing(h,true);h.body.setSize(Math.min(42,h.width-8),Math.min(18,h.height-6));h.phase=i*430;h.warning=this.add.ellipse(x,646,74,24,this.dataDef.accent,.08).setStrokeStyle(2,this.dataDef.accent,.65).setDepth(11);this.hazards.push(h);this.physics.add.overlap(this.player,h,()=>{if(h.dangerous)this.player.takeDamage(1);});});}
+  makeHazards(){const layouts={forest:[620,880,1160,1430,1690,1970,2240,2500,2760,3220],garden:[580,830,1090,1350,1610,1880,2140,2400,2670,2930,3190,3450,3840],castle:[570,820,1080,1330,1590,1850,2110,2370,2630,2890,3150,3410,3670,3900,4310]},styles={forest:['hazard-root','hazard-thorns','hazard-puddle'],garden:['hazard-thorns','hazard-water','hazard-root'],castle:['hazard-flame','hazard-blade','hazard-magic']};this.hazards=[];(layouts[this.dataDef.theme]||[]).forEach((x,i)=>{const key=styles[this.dataDef.theme][i%3],h=this.add.image(x,642,key).setDepth(12).setScale(key==='hazard-blade'?.78:1.08);this.physics.add.existing(h,true);h.body.setSize(Math.min(42,h.width-8),Math.min(18,h.height-6));h.phase=i*430;h.warning=this.add.ellipse(x,646,74,24,this.dataDef.accent,.08).setStrokeStyle(2,this.dataDef.accent,.65).setDepth(11);this.hazards.push(h);this.physics.add.overlap(this.player,h,()=>{if(h.dangerous)this.player.takeDamage(1);});});}
 
   validateRoute(){const gravity=900,jump=450,run=350,maxRise=jump*jump/(2*gravity),route=[{x:100,y:648,w:20},...this.dataDef.platforms];const report=[];for(let i=1;i<route.length;i++){const a=route[i-1],b=route[i],verticalGap=Math.max(0,a.y-b.y),horizontalGap=Math.max(0,Math.abs(b.x-a.x)-(a.w+b.w)/2);const disc=jump*jump-2*gravity*verticalGap;const flight=disc>=0?(jump+Math.sqrt(disc))/gravity:0;const maxHorizontal=run*flight;report.push({jump:i,verticalGap,horizontalGap,maxHorizontal:Math.round(maxHorizontal),valid:verticalGap<=maxRise-8&&horizontalGap<=maxHorizontal*.88});}const invalid=report.filter(x=>!x.valid);console.table(report);if(invalid.length)console.error(`[QA ${this.scene.key}] Saltos fuera de rango`,invalid);else console.info(`[QA ${this.scene.key}] Ruta principal validada: ${report.length} saltos`);}
 
@@ -194,7 +198,7 @@ export default class BaseLevelScene extends Phaser.Scene {
   update(time,delta){
     if(!this.player||this.paused||this.gameOver)return;this.player.update(time,delta);
     if(this.encounterDialogue&&!this.encounterDialogue.shown&&Math.abs(this.player.x-this.encounterDialogue.target.x)<390)this.startEncounterDialogue();
-    this.cameras.main.setFollowOffset(Phaser.Math.Linear(this.cameras.main.followOffset.x,-this.player.body.velocity.x*.12,.035),Phaser.Math.Linear(this.cameras.main.followOffset.y,this.player.body.velocity.y<0?28:0,.035));this.updateExitState();this.enemies?.getChildren().forEach(e=>e.update(delta));
+    this.cameras.main.setFollowOffset(Phaser.Math.Linear(this.cameras.main.followOffset.x,-this.player.body.velocity.x*.12,.035),Phaser.Math.Linear(this.cameras.main.followOffset.y,this.player.body.velocity.y<0?28:0,.035));this.updateExitState();this.enemies?.getChildren().forEach(e=>{e.update(delta);e.safetyTimer=(e.safetyTimer||0)-delta;if(e.safetyTimer<=0){e.safetyTimer=500;if(e.y>760&&e.safeSpawn){e.setPosition(e.safeSpawn.x,e.safeSpawn.y);e.setVelocity(0);e.body.enable=true;}if(e.humanoid&&e.body?.blocked.down&&e.y>650&&e.safeSpawn){e.setPosition(e.safeSpawn.x,e.safeSpawn.y);e.setVelocity(0);e.body.updateFromGameObject();}}});
     this.collectibles?.forEach(item=>{if(item.active&&!item.collected&&!item.magnetizing&&Phaser.Math.Distance.Between(this.player.x,this.player.y,item.x,item.y)<=item.pickupRange)this.attemptPickup(item);});
     if(this.generalHud){const alive=this.general?.active&&this.general.health>0;this.generalHud.setVisible(alive&&Math.abs(this.player.x-this.general.x)<620);this.generalFill.displayWidth=380*Math.max(0,this.general.health/this.generalMaxHealth);}
     this.projectiles?.getChildren().forEach(s=>{s.x+=s.travelDir*s.travelSpeed*delta/1000;s.body.updateFromGameObject();const targets=this.enemies.getChildren().filter(e=>e.active&&Math.abs(e.x-s.x)<360&&Math.sign(e.x-s.x)===s.travelDir);if(targets.length){targets.sort((a,b)=>Math.abs(a.x-s.x)-Math.abs(b.x-s.x));s.y=Phaser.Math.Linear(s.y,targets[0].y,.1);s.body.updateFromGameObject();}s.trailTimer=(s.trailTimer||0)-delta;if(s.active&&s.trailTimer<=0){s.trailTimer=70;const h=this.add.text(s.x,s.y,'♥',{fontSize:'9px',color:'#ff86bd'}).setOrigin(.5).setDepth(10);this.tweens.add({targets:h,x:h.x-s.travelDir*14,alpha:0,scale:.3,duration:260,onComplete:()=>h.destroy()});}});
