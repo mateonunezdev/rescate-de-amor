@@ -1,5 +1,5 @@
 export default class UIManager {
-  constructor(scene) {
+  constructor(scene, options = {}) {
     this.scene = scene;
     this.container = null;
     this.hud = null;
@@ -7,7 +7,7 @@ export default class UIManager {
     this.rosesText = null;
     this.lettersText = null;
     this.powerText = null;
-    this.createHud();
+    if(options.hud !== false)this.createHud();
   }
 
   createHud() {
@@ -54,5 +54,24 @@ export default class UIManager {
       duration,
       onComplete: () => msg.destroy(),
     });
+  }
+
+  showDialogueBubble(speaker, text, options = {}) {
+    const x = options.x ?? this.scene.scale.width / 2;
+    const y = options.y ?? 485;
+    const width = options.width ?? 610;
+    const duration = options.duration ?? 2500;
+    const layer = this.scene.add.container(x, y).setScrollFactor(0).setDepth(1120).setAlpha(0);
+    const shadow = this.scene.add.rectangle(5, 6, width, 104, 0x08050d, .35).setOrigin(.5);
+    const panel = this.scene.add.rectangle(0, 0, width, 104, 0xfff0d8, .98).setStrokeStyle(5, 0x422039, 1);
+    const tailX = options.tail === 'right' ? width / 2 - 54 : -width / 2 + 54;
+    const tail = this.scene.add.triangle(tailX, 66, -18, -18, 22, -18, options.tail === 'right' ? 18 : -18, 22, 0xfff0d8).setStrokeStyle(4, 0x422039, 1);
+    const name = this.scene.add.text(-width / 2 + 22, -37, String(speaker).toUpperCase(), { fontFamily: 'monospace', fontSize: '16px', color: options.nameColor ?? '#b02f68', fontStyle: 'bold' });
+    const line = this.scene.add.text(-width / 2 + 22, -10, text, { fontFamily: 'monospace', fontSize: '18px', color: '#3d2030', wordWrap: { width: width - 44 }, lineSpacing: 4 });
+    layer.add([shadow, tail, panel, name, line]);
+    this.scene.tweens.add({ targets: layer, alpha: 1, y: y - 8, duration: 180, ease: 'Back.easeOut' });
+    const close = () => { if (!layer.active) return; this.scene.tweens.add({ targets: layer, alpha: 0, y: layer.y - 12, duration: 220, onComplete: () => layer.destroy() }); };
+    this.scene.time.delayedCall(duration, close);
+    return layer;
   }
 }

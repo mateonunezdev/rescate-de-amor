@@ -1,9 +1,9 @@
 import Player from '../entities/Player.js?v=20260820-pickup-combat-24';
-import UIManager from '../ui/UIManager.js?v=20260820-professional-final-22';
+import UIManager from '../ui/UIManager.js?v=20260823-professional-polish-29';
 import AudioManager from '../systems/AudioManager.js';
 import ParticleManager from '../systems/ParticleManager.js';
 import { gameState } from '../config.js';
-import { TextureFactory } from '../utils/TextureFactory.js?v=20260819-combat-final-15';
+import { TextureFactory } from '../utils/TextureFactory.js?v=20260823-professional-polish-29';
 
 export default class BossScene extends Phaser.Scene {
   constructor() {
@@ -40,13 +40,13 @@ export default class BossScene extends Phaser.Scene {
     this.loveShots = this.physics.add.group({ allowGravity: false });
 
     // Boss setup
-    this.boss = this.add.image(1025, 335, 'pecho-final',0).setScale(1.08);
+    this.bossHomeX=925;this.bossHomeY=315;this.boss = this.add.image(this.bossHomeX,this.bossHomeY,'pecho-final',0).setScale(1.58);
     this.bossHasFinalArt=true;
     this.physics.add.existing(this.boss, false);
     this.boss.body.setAllowGravity(false);
     this.boss.body.setImmovable(true);
     this.boss.setDepth(15);
-    this.bossAura = this.add.ellipse(this.boss.x, this.boss.y, 155,205, 0xd33c9c, 0.09).setDepth(14);
+    this.bossAura = this.add.ellipse(this.boss.x,this.boss.y,225,285,0xd33c9c,.14).setStrokeStyle(4,0xff83c5,.28).setDepth(14);
     this.bossBirds = [];
     for (let i=0;i<3;i++) { const bird=this.add.image(this.boss.x,this.boss.y,'enemy-pigeon').setScale(1.5).setDepth(16);this.bossBirds.push(bird); }
 
@@ -164,16 +164,16 @@ export default class BossScene extends Phaser.Scene {
     }
     if (this.phase !== this.lastAnnouncedPhase) {
       this.lastAnnouncedPhase = this.phase;
-      const line = this.phase === 2 ? 'PECHO PALOMA: “¿Por qué ella?”\nMATEO: “Porque la amo.”\nPECHO PALOMA: “¡SILENCIO!”' : 'PECHO PALOMA: “¡Llevo tanto tiempo mirando desde lejos!”\nPAOLA: “Nunca lo tuviste.”';
-      this.uiManager.showMessage(line, '#ffe0ef', 2600);
+      if (this.phase === 2) this.uiManager.showDialogueBubble('PECHO PALOMA', '¿Por qué ella?  —  MATEO: Porque la amo.', { x: 690, y: 500, tail: 'right', duration: 2700 });
+      else this.uiManager.showDialogueBubble('PAOLA', 'Nunca lo tuviste. El amor no se obliga.', { x: 600, y: 500, duration: 2700 });
     }
   }
 
   bossPhasedMovement() {
-    const targetX = 1025;
+    const targetX = this.bossHomeX;
     const bobAmount = 20 + this.phase * 10;
     const bobSpeed = 600 - this.phase * 100;
-    this.boss.y = 335 + Math.sin((this.time.now / bobSpeed)) * Math.min(12,bobAmount);
+    this.boss.x=Phaser.Math.Linear(this.boss.x,targetX,.04);this.boss.y=this.bossHomeY+Math.sin((this.time.now/bobSpeed))*Math.min(14,bobAmount);
     this.bossAura.setPosition(this.boss.x,this.boss.y).setScale(1+Math.sin(this.time.now/240)*.08);
     this.bossBirds.forEach((b,i)=>b.setPosition(this.boss.x+Math.cos(this.time.now/500+i*2.1)*88,this.boss.y+Math.sin(this.time.now/500+i*2.1)*55));
   }
@@ -182,7 +182,7 @@ export default class BossScene extends Phaser.Scene {
     const warning=this.add.text(this.boss.x-120,this.boss.y+105,this.phase===1?'¡BANDADA!':this.phase===2?'¡BESO HIPNÓTICO!':'¡CORAZÓN VACÍO!',{fontFamily:'monospace',fontSize:'15px',color:'#fff0a8',backgroundColor:'#621c56',padding:{x:8,y:5}}).setOrigin(.5).setDepth(80);
     this.tweens.add({targets:warning,alpha:0,duration:650,onComplete:()=>warning.destroy()});
     const phase=this.phase;this.attackCycle=(this.attackCycle||0)+1;
-    if(phase===1)this.attackPattern1();else if(phase===2&&this.attackCycle%3===0)this.attackPatternFeathers();else if(phase===2)this.attackPattern2();else this.attackPattern3();
+    if(phase===1)this.attackPattern1();else if(phase===2&&this.attackCycle%3===0)this.attackPatternFeathers();else if(phase===2)this.attackPattern2();else if(this.attackCycle%2===0)this.attackPatternEmptyHeart();else this.attackPattern3();
     this.bossFrameResetIn=520;
   }
 
@@ -252,7 +252,14 @@ export default class BossScene extends Phaser.Scene {
     const warning=this.add.rectangle(470,555,820,8,0xffd06b,.65).setOrigin(0,.5).setDepth(70);this.tweens.add({targets:warning,alpha:.15,duration:180,yoyo:true,repeat:2,onComplete:()=>{warning.destroy();if(this.defeated)return;const beam=this.add.rectangle(470,555,820,25,0xff4fa8,.78).setOrigin(0,.5).setDepth(70);this.physics.add.existing(beam,true);const hit=this.physics.add.overlap(this.player,beam,()=>this.player.takeDamage(1));this.cameras.main.shake(160,.006);this.tweens.add({targets:beam,alpha:0,scaleY:1.8,duration:320,onComplete:()=>{hit.destroy();beam.destroy();}});}});
   }
 
-  attackPatternFeathers(){if(this.bossHasFinalArt)this.boss.setFrame(4);const lanes=[250,430,610,790,970];lanes.forEach((x,i)=>{if(i===this.attackCycle%lanes.length)return;const mark=this.add.ellipse(x,610,92,24,0xff5fae,.12).setStrokeStyle(3,0xffd0e6,.8).setDepth(69);this.tweens.add({targets:mark,alpha:1,scaleX:1.2,duration:420,yoyo:true,onComplete:()=>{mark.destroy();const feather=this.add.image(x,-20,'enemy-pigeon').setScale(.75).setTint(0xffc4e5).setAngle(90).setDepth(72);this.physics.add.existing(feather);feather.body.setAllowGravity(false);feather.body.setVelocityY(370);this.physics.add.overlap(this.player,feather,()=>this.onBossDamagePlayer(feather));this.projectiles.push(feather);}});});this.uiManager.showMessage('LLUVIA DE PLUMAS · ¡BUSCA EL ESPACIO SEGURO!','#ffe4f2',1300);}
+  attackPatternEmptyHeart(){
+    if(this.bossHasFinalArt)this.boss.setFrame(5);this.bossAura.setFillStyle(0x6b174f,.34).setStrokeStyle(7,0xff4d9d,.68);
+    const heart=this.add.image(this.boss.x-58,this.boss.y+12,'empty-heart-shot').setScale(.35).setDepth(74);this.physics.add.existing(heart);heart.body.setAllowGravity(false);
+    this.tweens.add({targets:heart,scale:1.45,duration:480,ease:'Back.easeOut',onComplete:()=>{if(!heart.active||this.defeated)return;const angle=Phaser.Math.Angle.Between(heart.x,heart.y,this.player.x,this.player.y);heart.body.setVelocity(Math.cos(angle)*255,Math.sin(angle)*255);}});
+    this.physics.add.overlap(this.player,heart,()=>this.onBossDamagePlayer(heart));this.projectiles.push(heart);this.time.delayedCall(700,()=>this.bossAura?.active&&this.bossAura.setFillStyle(0xd33c9c,.14).setStrokeStyle(4,0xff83c5,.28));
+  }
+
+  attackPatternFeathers(){if(this.bossHasFinalArt)this.boss.setFrame(4);const lanes=[250,430,610,790,970];lanes.forEach((x,i)=>{if(i===this.attackCycle%lanes.length)return;const mark=this.add.ellipse(x,610,92,24,0xff5fae,.12).setStrokeStyle(3,0xffd0e6,.8).setDepth(69);this.tweens.add({targets:mark,alpha:1,scaleX:1.2,duration:420,yoyo:true,onComplete:()=>{mark.destroy();if(this.defeated)return;const feather=this.add.image(x,-20,'enemy-feather-shot').setScale(1.25).setAngle(90).setDepth(72);this.physics.add.existing(feather);feather.body.setAllowGravity(false);feather.body.setVelocityY(370);this.physics.add.overlap(this.player,feather,()=>this.onBossDamagePlayer(feather));this.projectiles.push(feather);}});});this.uiManager.showMessage('LLUVIA DE PLUMAS · ¡BUSCA EL ESPACIO SEGURO!','#ffe4f2',1300);}
 
   onBossDamagePlayer(projectile) {
     const x=projectile.x,y=projectile.y;
@@ -271,8 +278,8 @@ export default class BossScene extends Phaser.Scene {
       this.boss.setAlpha(0.7);
       if(this.bossHasFinalArt)this.boss.setFrame(6);
       this.boss.x += 7;
-      this.time.delayedCall(100, () => {this.boss.setAlpha(1);if(this.bossHasFinalArt)this.boss.setFrame(0);});
-      this.time.delayedCall(80, () => this.boss.active && (this.boss.x = 1025));
+      this.time.delayedCall(100,()=>{if(!this.boss?.active)return;this.boss.setAlpha(1);if(this.bossHasFinalArt)this.boss.setFrame(this.phase===3?5:0);});
+      this.time.delayedCall(80,()=>this.boss?.active&&(this.boss.x=this.bossHomeX));
 
       this.updateHealthBar();
 
@@ -315,7 +322,8 @@ export default class BossScene extends Phaser.Scene {
       ease: 'Cubic.easeIn',
     });
     const crown=this.add.text(this.boss.x,this.boss.y-75,'♛',{fontSize:'44px',color:'#f1c454'}).setOrigin(.5).setDepth(40);this.tweens.add({targets:crown,x:900,y:555,angle:160,duration:1100,ease:'Bounce.easeOut'});
-    this.uiManager.showMessage('PECHO PALOMA: “Solo quería que me miraras como la miras a ella…”\nMATEO: “Eso no se puede obligar.”','#ffe2ef',3200);
+    this.uiManager.showDialogueBubble('PECHO PALOMA','Solo quería que me miraras como la miras a ella…',{x:880,y:260,tail:'right',duration:3000});
+    this.time.delayedCall(3000,()=>this.uiManager.showDialogueBubble('MATEO','Eso no se puede obligar.',{x:925,y:455,tail:'right',duration:2500,width:500}));
 
     // Victory particle burst
     for (let i = 0; i < 3; i++) {
@@ -336,7 +344,7 @@ export default class BossScene extends Phaser.Scene {
     gameState.currentScene = 'EndingScene';
     gameState.achievements = [...new Set([...(gameState.achievements || []), 'Reina derrotada', 'Sin miedo a las palomas'])];
     localStorage.setItem('rescate-de-amor-save', JSON.stringify(gameState));
-    this.time.delayedCall(3200,()=>this.uiManager.showMessage('PECHO PALOMA: “Llevo enamorada de ti mucho tiempo. Ahora lo sé.”\nPAOLA: “Entonces abre la jaula.”','#ffe2ef',3200));
+    this.time.delayedCall(5200,()=>this.uiManager.showDialogueBubble('PAOLA','Entonces abre la jaula.',{x:380,y:430,duration:2100,width:460}));
     this.time.delayedCall(5700,()=>{this.cell?.setAlpha(.35);this.uiManager.showMessage('El candado pierde su magia. Pecho Paloma lo deja libre.','#ffe9b0',1900);});
     this.victoryTransitionIn=7600;
   }
@@ -382,13 +390,7 @@ export default class BossScene extends Phaser.Scene {
     }
 
     // Cleanup off-screen projectiles
-    this.projectiles = this.projectiles.filter(p => {
-      if (!p.active || p.x < -100) {
-        p.destroy();
-        return false;
-      }
-      return true;
-    });
+    this.projectiles=this.projectiles.filter(p=>{if(!p?.active)return false;if(p.x < -100||p.x>1380||p.y>820||p.y<-140){p.destroy();return false;}return true;});
 
     // Player death
     if (this.player.health <= 0) {

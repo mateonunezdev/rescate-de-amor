@@ -1,12 +1,14 @@
 import { FINAL_LETTER } from '../data/finalLetter.js?v=20260821-picnic-letter-25';
-import { TextureFactory } from '../utils/TextureFactory.js';
+import { TextureFactory } from '../utils/TextureFactory.js?v=20260823-professional-polish-29';
 import AudioManager from '../systems/AudioManager.js';
 import { gameState } from '../config.js';
+import UIManager from '../ui/UIManager.js?v=20260823-professional-polish-29';
 
 export default class EndingScene extends Phaser.Scene {
   constructor(){super('EndingScene');}
   create(){
     this.audioManager=new AudioManager(this);this.audioManager.playMusic('endingMusic');
+    this.uiManager=new UIManager(this,{hud:false});
     TextureFactory.createPlayerTexture(this);TextureFactory.createMateoTexture(this);
     this.cameras.main.fadeIn(650,12,6,22);this.makeBackdrop();this.makeRescue();
     const collected=gameState.memories||[],cards=['card1','card2','card3'];gameState.finalLetterUnlocked=cards.every(c=>collected.includes(c));gameState.secretUnlocked=collected.filter(x=>!cards.includes(x)).length>=5;gameState.achievements=[...new Set([...(gameState.achievements||[]),'Nuestra historia','Amor verdadero'])];
@@ -44,22 +46,27 @@ export default class EndingScene extends Phaser.Scene {
     const paper=this.add.rectangle(640,350,760,560,0xfff1d7).setStrokeStyle(8,0xd18a8b);
     const inner=this.add.rectangle(640,350,720,520,0,0).setStrokeStyle(3,0xe0b47d);
     const deco=this.add.text(640,94,'🌹  💌  🌹',{fontSize:'30px'}).setOrigin(.5);
-    const words=FINAL_LETTER.split(' '),pages=[];for(let i=0;i<words.length;i+=52)pages.push(words.slice(i,i+52).join(' '));this.letterPages=pages;
-    let page=0,finished=false;
-    const letter=this.add.text(640,335,'',{fontFamily:'monospace',fontSize:'19px',color:'#51223b',align:'left',lineSpacing:9,wordWrap:{width:640}}).setOrigin(.5);
-    const counter=this.add.text(640,558,'',{fontFamily:'monospace',fontSize:'14px',color:'#9b5670'}).setOrigin(.5);
-    const previous=this.add.text(430,610,'ANTERIOR',{fontFamily:'monospace',fontSize:'17px',color:'#fff',backgroundColor:'#78305d',padding:{x:18,y:10}}).setOrigin(.5).setInteractive({useHandCursor:true});
-    const next=this.add.text(850,610,'SIGUIENTE',{fontFamily:'monospace',fontSize:'17px',color:'#fff',backgroundColor:'#78305d',padding:{x:18,y:10}}).setOrigin(.5).setInteractive({useHandCursor:true});
-    const anniversary=this.add.text(640,515,'❤️ FELIZ ANIVERSARIO ❤️',{fontFamily:'monospace',fontSize:'20px',color:'#b93268',fontStyle:'bold'}).setOrigin(.5).setVisible(false);
-    layer.add([shade,warm,shadow,paper,inner,deco,letter,counter,previous,next,anniversary]);layer.setScale(.85).setAlpha(0);this.tweens.add({targets:layer,scale:1,alpha:1,duration:420,ease:'Back.easeOut'});
-    const render=()=>{this.letterPage=page;letter.setText(pages[page]);counter.setText(`${page+1} / ${pages.length}`);previous.setAlpha(page?1:.35);next.setText(page===pages.length-1?'TERMINAR CARTA':'SIGUIENTE');anniversary.setVisible(page===pages.length-1);};
+    const viewport={x:292,y:125,w:696,h:438};
+    const content=this.add.container(0,0);
+    const letter=this.add.text(640,viewport.y+10,FINAL_LETTER,{fontFamily:'monospace',fontSize:'18px',color:'#51223b',align:'left',lineSpacing:9,wordWrap:{width:620}}).setOrigin(.5,0);
+    const anniversary=this.add.text(640,letter.y+letter.height+34,'❤️ FELIZ ANIVERSARIO ❤️',{fontFamily:'monospace',fontSize:'20px',color:'#b93268',fontStyle:'bold'}).setOrigin(.5,0);
+    const next=this.add.text(640,anniversary.y+58,'CONTINUAR ❤️',{fontFamily:'monospace',fontSize:'17px',color:'#fff',backgroundColor:'#78305d',padding:{x:20,y:10}}).setOrigin(.5,0).setInteractive({useHandCursor:true});
+    content.add([letter,anniversary,next]);
+    const maskShape=this.make.graphics({add:false});maskShape.fillStyle(0xffffff).fillRect(viewport.x,viewport.y,viewport.w,viewport.h);content.setMask(maskShape.createGeometryMask());
+    const hint=this.add.text(640,592,'↕  RUEDA / ↑ ↓ / ARRASTRA PARA LEER',{fontFamily:'monospace',fontSize:'14px',color:'#8d5368'}).setOrigin(.5);
+    const track=this.add.rectangle(1004,344,10,430,0x9a6175,.25).setStrokeStyle(1,0x8d5368,.6);
+    const handle=this.add.rectangle(1004,160,14,70,0xb94e78,.9).setInteractive({useHandCursor:true,draggable:true});
+    layer.add([shade,warm,shadow,paper,inner,deco,content,hint,track,handle]);layer.setScale(.85).setAlpha(0);this.tweens.add({targets:layer,scale:1,alpha:1,duration:420,ease:'Back.easeOut'});
+    let scrollY=0,finished=false,dragStartY=0,dragStartScroll=0;
+    const contentBottom=next.y+next.height+18,maxScroll=Math.max(0,contentBottom-(viewport.y+viewport.h));this.letterMaxScroll=maxScroll;
+    const render=()=>{scrollY=Phaser.Math.Clamp(scrollY,0,maxScroll);this.letterScrollY=scrollY;content.y=-scrollY;const range=viewport.h-handle.height;handle.y=viewport.y+handle.height/2+(maxScroll?scrollY/maxScroll:0)*range;};
     const finish=()=>{if(finished)return;finished=true;cleanup();this.tweens.add({targets:layer,alpha:0,duration:300,onComplete:()=>{layer.destroy();this.showCompleted();}});};
-    const goNext=()=>{if(page<pages.length-1){page++;render();this.audioManager.playSfx('checkpoint');}else finish();};const goPrevious=()=>{if(page>0){page--;render();}};
-    const onEnter=()=>goNext(),onSpace=()=>goNext(),onRight=()=>goNext(),onLeft=()=>goPrevious();
-    const cleanup=()=>{this.input.keyboard.off('keydown-ENTER',onEnter);this.input.keyboard.off('keydown-SPACE',onSpace);this.input.keyboard.off('keydown-RIGHT',onRight);this.input.keyboard.off('keydown-LEFT',onLeft);previous.removeAllListeners();next.removeAllListeners();};
-    previous.on('pointerdown',goPrevious);next.on('pointerdown',goNext);this.input.keyboard.on('keydown-ENTER',onEnter);this.input.keyboard.on('keydown-SPACE',onSpace);this.input.keyboard.on('keydown-RIGHT',onRight);this.input.keyboard.on('keydown-LEFT',onLeft);this.events.once('shutdown',cleanup);render();
+    const move=amount=>{scrollY+=amount;render();};const onWheel=(pointer,objects,dx,dy)=>move(dy*.7);const onUp=()=>move(-48),onDown=()=>move(48),onPageUp=()=>move(-260),onPageDown=()=>move(260);
+    const onDragStart=pointer=>{dragStartY=pointer.y;dragStartScroll=scrollY;};const onDrag=pointer=>{const range=viewport.h-handle.height;scrollY=dragStartScroll+(pointer.y-dragStartY)*(maxScroll/range);render();};
+    const cleanup=()=>{this.input.off('wheel',onWheel);this.input.keyboard.off('keydown-UP',onUp);this.input.keyboard.off('keydown-DOWN',onDown);this.input.keyboard.off('keydown-PAGE_UP',onPageUp);this.input.keyboard.off('keydown-PAGE_DOWN',onPageDown);handle.off('dragstart',onDragStart);handle.off('drag',onDrag);next.removeAllListeners();maskShape.destroy();};
+    next.once('pointerdown',finish);this.input.on('wheel',onWheel);this.input.keyboard.on('keydown-UP',onUp);this.input.keyboard.on('keydown-DOWN',onDown);this.input.keyboard.on('keydown-PAGE_UP',onPageUp);this.input.keyboard.on('keydown-PAGE_DOWN',onPageDown);handle.on('dragstart',onDragStart);handle.on('drag',onDrag);this.events.once('shutdown',cleanup);render();
   }
   showCompleted(){
-    const shade=this.add.rectangle(640,360,1280,720,0x13091d,.82).setDepth(120);const title=this.add.text(640,255,'RESCATE COMPLETADO ❤️\n\n“Nuestra historia continúa...”',{fontFamily:'monospace',fontSize:'38px',color:'#ffe5af',align:'center',stroke:'#71254f',strokeThickness:7}).setOrigin(.5).setDepth(122);for(let i=0;i<65;i++){const p=this.add.text(Math.random()*1280,-30-Math.random()*500,['♥','🌹','★','✦'][i%4],{fontSize:`${12+Math.random()*18}px`,color:i%2?'#ff82b4':'#ffe39a'}).setDepth(121);this.tweens.add({targets:p,y:760,x:p.x+(Math.random()-.5)*170,angle:(Math.random()-.5)*240,duration:2800+Math.random()*2500,repeat:1,delay:Math.random()*900,onComplete:()=>p.destroy()});}const next=this.add.text(640,570,'CONTINUAR ❤️',{fontFamily:'monospace',fontSize:'20px',color:'#fff',backgroundColor:'#74315c',padding:{x:22,y:11}}).setOrigin(.5).setDepth(123).setInteractive({useHandCursor:true});let leaving=false;const go=()=>{if(leaving)return;leaving=true;gameState.endingUnlocked=true;gameState.currentScene='SecretScene';localStorage.setItem('rescate-de-amor-save',JSON.stringify(gameState));this.cameras.main.fadeOut(650,8,4,18);this.time.delayedCall(670,()=>this.scene.start('SecretScene'));};next.once('pointerdown',go);this.input.keyboard.once('keydown-ENTER',go);this.input.keyboard.once('keydown-SPACE',go);
+    const shade=this.add.rectangle(640,360,1280,720,0x13091d,.72).setDepth(120);const title=this.add.text(640,245,'RESCATE COMPLETADO ❤️',{fontFamily:'monospace',fontSize:'38px',color:'#ffe5af',align:'center',stroke:'#71254f',strokeThickness:7}).setOrigin(.5).setDepth(122).setAlpha(0);const continuation=this.add.text(640,345,'“Nuestra historia continúa…”',{fontFamily:'monospace',fontSize:'31px',color:'#ffe5af',stroke:'#71254f',strokeThickness:6}).setOrigin(.5).setDepth(122).setAlpha(0);for(let i=0;i<65;i++){const p=this.add.text(Math.random()*1280,-30-Math.random()*500,['♥','🌹','★','✦'][i%4],{fontSize:`${12+Math.random()*18}px`,color:i%2?'#ff82b4':'#ffe39a'}).setDepth(121);this.tweens.add({targets:p,y:760,x:p.x+(Math.random()-.5)*170,angle:(Math.random()-.5)*240,duration:2800+Math.random()*2500,repeat:1,delay:Math.random()*900,onComplete:()=>p.destroy()});}const next=this.add.text(640,570,'CONTINUAR ❤️',{fontFamily:'monospace',fontSize:'20px',color:'#fff',backgroundColor:'#74315c',padding:{x:22,y:11}}).setOrigin(.5).setDepth(123).setInteractive({useHandCursor:true}).setAlpha(0);this.uiManager.showDialogueBubble('MATEO','Feliz aniversario, amor.',{x:820,y:430,tail:'right',duration:2200,width:500});this.time.delayedCall(2200,()=>this.uiManager.showDialogueBubble('PAOLA','❤️',{x:440,y:430,duration:1700,width:300}));this.time.delayedCall(3900,()=>this.tweens.add({targets:[title,continuation,next],alpha:1,duration:650}));let leaving=false;const go=()=>{if(leaving||next.alpha<.9)return;leaving=true;gameState.endingUnlocked=true;gameState.currentScene='SecretScene';localStorage.setItem('rescate-de-amor-save',JSON.stringify(gameState));this.cameras.main.fadeOut(650,8,4,18);this.time.delayedCall(670,()=>this.scene.start('SecretScene'));};next.once('pointerdown',go);this.input.keyboard.on('keydown-ENTER',go);this.input.keyboard.on('keydown-SPACE',go);this.events.once('shutdown',()=>{this.input.keyboard.off('keydown-ENTER',go);this.input.keyboard.off('keydown-SPACE',go);});
   }
 }

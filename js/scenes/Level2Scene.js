@@ -1,4 +1,4 @@
-import BaseLevelScene from './BaseLevelScene.js?v=20260821-card-picnic-polish-27';
+import BaseLevelScene from './BaseLevelScene.js?v=20260823-professional-polish-29';
 export default class Level2Scene extends BaseLevelScene {
   constructor(){ super('Level2Scene',{
     title:'NIVEL 2 · JARDÍN DE ROSAS',objective:'Encuentra la estrella y la rosa entre fuentes y setos.',theme:'garden',background:'bg-garden',width:3200,music:'gardenMusic',sky:'#281438',skyTop:0x17132f,skyBottom:0x623052,ground:0x271f2c,platform:0x39323a,trim:0xe0b46c,accent:0xe64a83,

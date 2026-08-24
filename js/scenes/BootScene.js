@@ -8,6 +8,7 @@ export default class BootScene extends Phaser.Scene {
     this.load.spritesheet('paola-final','characters/paola/paola-sheet.png?v=20260819-final-art-4',{frameWidth:80,frameHeight:96});
     this.load.spritesheet('mateo-final','characters/mateo/mateo-sheet.png?v=20260819-final-art-4',{frameWidth:80,frameHeight:96});
     this.load.spritesheet('pecho-final','characters/pecho-paloma/pecho-paloma-sheet.png?v=20260819-final-art-4',{frameWidth:112,frameHeight:120});
+    this.load.spritesheet('pigeon-enemies-v2','sprites/pigeon-enemies-v2-clean.png?v=20260823-professional-polish-29',{frameWidth:128,frameHeight:128});
     this.load.image('bg-romantic','backgrounds/romantic-overlook.png?v=20260819-final-world-12');
     this.load.image('bg-picnic','backgrounds/romantic-picnic.png?v=20260821-picnic-final-25');
     this.load.image('bg-forest','backgrounds/enchanted-forest.png?v=20260819-final-world-12');
@@ -35,7 +36,7 @@ export default class BootScene extends Phaser.Scene {
   }
 
   create() {
-    const required=['paola-final','mateo-final','pecho-final','bg-romantic','bg-picnic','bg-forest','bg-garden','bg-castle','bg-boss'];
+    const required=['paola-final','mateo-final','pecho-final','pigeon-enemies-v2','bg-romantic','bg-picnic','bg-forest','bg-garden','bg-castle','bg-boss'];
     const missing=required.filter(key=>!this.textures.exists(key));
     if(missing.length)throw new Error(`Assets visuales obligatorios ausentes: ${missing.join(', ')}`);
     console.info('[ARTE FINAL ACTIVO]',required.map(key=>`${key}:${this.textures.get(key).frameTotal} frames`).join(' · '));

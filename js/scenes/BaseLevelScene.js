@@ -1,12 +1,12 @@
 import Player from '../entities/Player.js?v=20260820-pickup-combat-24';
-import Enemy from '../entities/Enemy.js?v=20260820-pickup-combat-24';
+import Enemy from '../entities/Enemy.js?v=20260823-professional-polish-29';
 import Collectible from '../entities/Collectible.js?v=20260820-pickup-combat-24';
-import UIManager from '../ui/UIManager.js?v=20260820-professional-final-22';
+import UIManager from '../ui/UIManager.js?v=20260821-boss-letter-polish-28';
 import AudioManager from '../systems/AudioManager.js';
 import ParticleManager from '../systems/ParticleManager.js';
 import SaveManager from '../systems/SaveManager.js';
 import { gameState } from '../config.js';
-import { TextureFactory } from '../utils/TextureFactory.js?v=20260820-pickup-combat-24';
+import { TextureFactory } from '../utils/TextureFactory.js?v=20260823-professional-polish-29';
 
 const MEMORY = {
   heart: ['CORAZÓN', 'Contigo, cada latido es especial.'],
@@ -42,6 +42,7 @@ export default class BaseLevelScene extends Phaser.Scene {
     this.enemies = this.physics.add.group();
     this.dataDef.enemies.forEach(e => { const enemy = new Enemy(this, e.x, e.y, e); this.enemies.add(enemy); });
     this.general=this.enemies.getChildren().find(e=>e.type==='general');if(this.general){this.generalMaxHealth=this.general.health;this.generalHud=this.add.container(640,128).setScrollFactor(0).setDepth(950);const gb=this.add.rectangle(0,0,360,46,0x1a1025,.94).setStrokeStyle(3,0xe4b75d);this.generalFill=this.add.rectangle(-166,12,332,10,0xc24983).setOrigin(0,.5);const gt=this.add.text(0,-9,'⚔ GENERAL PALOMO ⚔',{fontFamily:'monospace',fontSize:'17px',color:'#ffe6ad'}).setOrigin(.5);this.generalHud.add([gb,this.generalFill,gt]);}
+    this.setupEncounterDialogues();
     this.physics.add.collider(this.enemies, this.solids);
     this.physics.add.overlap(this.player, this.enemies, (p, e) => p.takeDamage(e.damage));
     this.physics.add.overlap(this.projectiles,this.enemies,(shot,enemy)=>{shot.hitTargets=shot.hitTargets||new Set();if(shot.hitTargets.has(enemy))return;shot.hitTargets.add(enemy);const frontal=enemy.type==='knight'&&Math.sign(shot.x-enemy.x)!==enemy.direction;if(frontal&&!shot.piercing){shot.destroy();enemy.setTint(0xffe39a);this.time.delayedCall(90,()=>enemy.active&&enemy.clearTint());return;}const damage=Math.ceil((shot.damage||1)*(gameState.attackBoost||1));if(!shot.piercing)shot.destroy();for(let i=0;i<damage;i++)enemy.active&&enemy.hit();});
@@ -50,6 +51,20 @@ export default class BaseLevelScene extends Phaser.Scene {
     this.events.on('game-over', () => this.showGameOver());
     this.add.text(32, 102, `${this.dataDef.title}\n${this.dataDef.objective}`, { fontFamily:'monospace', fontSize:'17px', color:'#ffe4ac', lineSpacing:7, stroke:'#28152f', strokeThickness:4 }).setScrollFactor(0).setDepth(200);
     if(this.scene.key==='Level1Scene'){const controls=this.add.text(640,625,'A/D MOVER · SPACE SALTAR · SHIFT CORRER\nZ/J COMBO · X/K ENERGÍA/CARGA · ↓+Z GOLPE AÉREO · C/L ESPECIAL · E INTERACTUAR',{fontFamily:'monospace',fontSize:'13px',color:'#fff0cf',align:'center',lineSpacing:5,backgroundColor:'#21132b',padding:{x:14,y:8}}).setOrigin(.5).setScrollFactor(0).setDepth(1050);this.tweens.add({targets:controls,alpha:0,y:605,duration:700,delay:9000,onComplete:()=>controls.destroy()});}
+  }
+
+  setupEncounterDialogues(){
+    const target=this.scene.key==='Level1Scene'?this.enemies.getChildren().find(e=>e.type==='soldier'):this.scene.key==='Level2Scene'?this.enemies.getChildren().find(e=>e.type==='mage'):this.general;
+    if(!target)return;
+    const lines=this.scene.key==='Level1Scene'?[['SOLDADO PALOMA','¡Nadie pasa por aquí!','right'],['PAOLA','Entonces hazte a un lado.','left']]:this.scene.key==='Level2Scene'?[['MAGO PALOMA','La reina ordenó que no llegaras al castillo.','right'],['PAOLA','Pues dile que voy en camino.','left']]:[['GENERAL PALOMO','Has llegado demasiado lejos.','right'],['PAOLA','No lo suficiente.','left'],['GENERAL PALOMO','Tu viaje termina aquí.','right'],['PAOLA','¿Eso lo decides tú?','left']];
+    this.encounterDialogue={target,lines,shown:false};
+  }
+
+  startEncounterDialogue(){
+    const encounter=this.encounterDialogue;if(!encounter||encounter.shown)return;encounter.shown=true;encounter.target.setVelocityX(0);encounter.target.inAction=true;
+    if(this.scene.key==='Level3Scene'){const shade=this.add.rectangle(640,360,1280,720,0x090612,.34).setScrollFactor(0).setDepth(1080);this.tweens.add({targets:shade,alpha:0,duration:600,delay:4300,onComplete:()=>shade.destroy()});}
+    encounter.lines.forEach(([speaker,line,tail],i)=>this.time.delayedCall(i*1250,()=>this.uiManager.showDialogueBubble(speaker,line,{x:speaker==='PAOLA'?360:900,y:speaker==='PAOLA'?430:250,tail,duration:1150,width:520})));
+    this.time.delayedCall(encounter.lines.length*1250,()=>encounter.target.active&&(encounter.target.inAction=false));
   }
 
   makeTextures() {
@@ -137,7 +152,7 @@ export default class BaseLevelScene extends Phaser.Scene {
   useSpecial(x,y){const cards=(gameState.memories||[]).filter(v=>/^card[123]$/.test(v)).length;if(cards<3){this.uiManager.showMessage('LATIDO VERDADERO · Requiere las 3 cartas','#ffd5e8');return false;}const ring=this.add.circle(x,y,35,0xff5cab,.22).setStrokeStyle(8,0xffeff8).setDepth(25);this.tweens.add({targets:ring,scale:7,alpha:0,duration:520,onComplete:()=>ring.destroy()});this.enemies.getChildren().filter(e=>e.active&&Phaser.Math.Distance.Between(x,y,e.x,e.y)<270).forEach(e=>{for(let i=0;i<3;i++)e.active&&e.hit();});this.particleManager.burst(x,y,0xff4fa8,45,350);this.cameras.main.shake(180,.008);this.audioManager.playSfx('victory');return true;}
   addRose(n){ gameState.roses=(gameState.roses||0)+n; this.refreshHud(); }
   refreshHud(){const cards=(gameState.memories||[]).filter(x=>/^card[123]$/.test(x)).length;this.uiManager?.updateHud({health:this.player?.health??gameState.health,roses:gameState.roses,cards,power:gameState.power}); }
-  makeCheckpoint(){(this.dataDef.checkpoints||[this.dataDef.checkpoint]).forEach(x=>{const c=this.add.image(x,610,'collectible-heart').setScale(1.5).setTint(0x8feaff).setDepth(18);this.physics.add.existing(c,true);this.physics.add.overlap(this.player,c,()=>{if(gameState.checkpoint?.scene===this.scene.key&&gameState.checkpoint.x===x)return;gameState.checkpoint={scene:this.scene.key,x,y:560};gameState.health=this.player.health;SaveManager.save(gameState);this.uiManager.showMessage('❤️ RECUERDO GUARDADO');this.player.heal(2);this.audioManager.playSfx('checkpoint');});});}
+  makeCheckpoint(){(this.dataDef.checkpoints||[this.dataDef.checkpoint]).forEach(x=>{const c=this.add.image(x,610,'collectible-heart').setScale(1.5).setTint(0x8feaff).setDepth(18);this.physics.add.existing(c,true);this.physics.add.overlap(this.player,c,()=>{if(gameState.checkpoint?.scene===this.scene.key&&gameState.checkpoint.x===x)return;gameState.checkpoint={scene:this.scene.key,x,y:560};gameState.health=this.player.health;SaveManager.save(gameState);const lines={Level1Scene:['PAOLA','Cada paso me acerca a ti.'],Level2Scene:['PAOLA','Ni las espinas van a detenerme.'],Level3Scene:['MATEO','Sé que estás cerca, amor.']};const [speaker,line]=lines[this.scene.key]||['PAOLA','Debo seguir adelante.'];this.uiManager.showDialogueBubble(speaker,`❤️ RECUERDO GUARDADO · ${line}`,{y:490,duration:2100});this.player.heal(2);this.audioManager.playSfx('checkpoint');});});}
   makeExit(){
     if(this.exitCreated){console.error(`[QA ${this.scene.key}] Se intentó crear más de una salida`);return;}
     this.exitCreated=true;
@@ -177,6 +192,7 @@ export default class BaseLevelScene extends Phaser.Scene {
   makeMobileControls(){ if(!this.sys.game.device.input.touch)return; [['◀',70],['▶',150],['↑',1080],['X',1180]].forEach(([t,x])=>this.add.text(x,640,t,{fontFamily:'monospace',fontSize:'34px',color:'#fff',backgroundColor:'#55294f',padding:10}).setScrollFactor(0).setDepth(250).setInteractive()); }
   update(time,delta){
     if(!this.player||this.paused||this.gameOver)return;this.player.update(time,delta);
+    if(this.encounterDialogue&&!this.encounterDialogue.shown&&Math.abs(this.player.x-this.encounterDialogue.target.x)<390)this.startEncounterDialogue();
     this.cameras.main.setFollowOffset(Phaser.Math.Linear(this.cameras.main.followOffset.x,-this.player.body.velocity.x*.12,.035),Phaser.Math.Linear(this.cameras.main.followOffset.y,this.player.body.velocity.y<0?28:0,.035));this.updateExitState();this.enemies?.getChildren().forEach(e=>e.update(delta));
     this.collectibles?.forEach(item=>{if(item.active&&!item.collected&&!item.magnetizing&&Phaser.Math.Distance.Between(this.player.x,this.player.y,item.x,item.y)<=item.pickupRange)this.attemptPickup(item);});
     if(this.generalHud){const alive=this.general?.active&&this.general.health>0;this.generalHud.setVisible(alive&&Math.abs(this.player.x-this.general.x)<620);this.generalFill.displayWidth=332*Math.max(0,this.general.health/this.generalMaxHealth);}
