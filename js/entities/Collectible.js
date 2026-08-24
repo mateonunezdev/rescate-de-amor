@@ -24,7 +24,7 @@ export default class Collectible extends Phaser.GameObjects.Container {
 
     scene.add.existing(this);
     scene.physics.add.existing(this, true);
-    this.pickupWidth=type.startsWith('card')?64:56;this.pickupHeight=type.startsWith('card')?80:68;this.pickupRange=type.startsWith('card')?68:60;this.magnetizing=false;
+    this.pickupWidth=type.startsWith('card')?92:64;this.pickupHeight=type.startsWith('card')?110:78;this.pickupRange=type.startsWith('card')?104:72;this.magnetizing=false;
     this.body.setSize(this.pickupWidth, this.pickupHeight);
     this.body.setOffset(-this.pickupWidth/2, -this.pickupHeight/2);
     this.setDepth(10);

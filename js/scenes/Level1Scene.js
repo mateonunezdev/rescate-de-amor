@@ -1,11 +1,7 @@
-import BaseLevelScene from './BaseLevelScene.js?v=20260823-professional-polish-29';
+import BaseLevelScene from './BaseLevelScene.js?v=20260823-master-final-30';
 export default class Level1Scene extends BaseLevelScene {
-  constructor(){ super('Level1Scene',{
-    title:'NIVEL 1 · BOSQUE DE LOS RECUERDOS', objective:'Encuentra el primer recuerdo.  A/D mover · SPACE saltar · X atacar',
-    theme:'forest',background:'bg-forest',width:3000,music:'forestMusic',sky:'#0b1630',skyTop:0x08152b,skyBottom:0x34234c,ground:0x162724,platform:0x263d32,trim:0x88b967,accent:0xff6ea9,
-    platforms:[{x:390,y:560,w:190},{x:700,y:495,w:190},{x:1010,y:430,w:220},{x:1330,y:520,w:200},{x:1640,y:450,w:230},{x:1970,y:535,w:200},{x:2270,y:465,w:230},{x:2580,y:395,w:210}],
-    enemies:[{x:620,y:610,type:'soldier',minX:500,maxX:790,speed:62,health:3},{x:1190,y:350,type:'dive',minX:1080,maxX:1400,speed:95,health:2},{x:1840,y:590,type:'archer',minX:1720,maxX:2050,speed:55,health:3},{x:2460,y:580,type:'soldier',minX:2320,maxX:2640,speed:72,health:3}],
-    collectibles:[{x:430,y:510,type:'rose'},{x:760,y:440,type:'rose'},{x:1050,y:375,type:'heart',memory:true},{x:1680,y:400,type:'rose'},{x:2310,y:405,type:'card1',memory:true}],
-    checkpoint:1500,checkpoints:[800,1550,2250],required:['card1'],unlock:2,next:'Level2Scene',exitLabel:'JARDÍN\nDE ROSAS'
-  }); }
+  constructor(){super('Level1Scene',{title:'NIVEL 1 · BOSQUE DE LOS RECUERDOS',objective:'Encuentra el primer recuerdo.  A/D mover · SPACE saltar · X atacar',theme:'forest',background:'bg-forest',width:3400,music:'forestMusic',sky:'#0b1630',skyTop:0x08152b,skyBottom:0x34234c,ground:0x162724,platform:0x263d32,trim:0x88b967,accent:0xff6ea9,
+  platforms:[{x:300,y:570,w:170},{x:500,y:515,w:150},{x:700,y:455,w:160},{x:900,y:535,w:170},{x:1100,y:470,w:160},{x:1300,y:405,w:170},{x:1510,y:510,w:180},{x:1720,y:445,w:170},{x:1930,y:550,w:180},{x:2140,y:485,w:170},{x:2350,y:420,w:180},{x:2560,y:525,w:170},{x:2770,y:460,w:180},{x:2960,y:390,w:160},{x:3140,y:500,w:170},{x:3290,y:430,w:150}],
+  enemies:[{x:520,y:610,type:'soldier',minX:430,maxX:700,speed:65,health:3},{x:850,y:400,type:'dive',minX:730,maxX:1020,speed:95,health:2},{x:1120,y:610,type:'soldier',minX:1030,maxX:1320,speed:72,health:3},{x:1510,y:440,type:'archer',minX:1400,maxX:1720,speed:58,health:3},{x:1900,y:610,type:'soldier',minX:1800,maxX:2100,speed:75,health:3},{x:2250,y:370,type:'dive',minX:2130,maxX:2460,speed:105,health:2},{x:2600,y:610,type:'knight',minX:2490,maxX:2780,speed:58,health:5},{x:3030,y:580,type:'general',name:'CAPITÁN PALOMA',miniBoss:true,minX:2880,maxX:3200,speed:78,health:9}],
+  collectibles:[{x:500,y:465,type:'rose'},{x:720,y:405,type:'rose'},{x:1320,y:350,type:'heart',memory:true},{x:1740,y:395,type:'rose'},{x:2380,y:370,type:'rose'},{x:3070,y:330,type:'card1',memory:true}],checkpoint:1700,checkpoints:[760,1650,2500,3000],required:['card1'],unlock:2,next:'Level2Scene',exitLabel:'JARDÍN\nDE ROSAS'});}
 }

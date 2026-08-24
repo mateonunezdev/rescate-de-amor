@@ -9,6 +9,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.minX = config.minX ?? x - 100;
     this.maxX = config.maxX ?? x + 100;
     this.damage = config.damage || 1;
+    this.miniBoss=!!config.miniBoss;this.displayName=config.name||null;
     this.flying = ['pigeon', 'dive', 'magic'].includes(this.type);
     this.humanoid=['guard','soldier','archer','knight','mage','general'].includes(this.type);this.rangedCooldown=900+Math.random()*700;
     this.setScale(this.type === 'general' ? 1.25 : this.humanoid ? 1.05 : 1.35);

@@ -1,187 +1,42 @@
-import ParticleManager from '../systems/ParticleManager.js';
 import AudioManager from '../systems/AudioManager.js';
 import { gameState } from '../config.js';
 
 export default class SecretScene extends Phaser.Scene {
-  constructor() {
-    super('SecretScene');
+  constructor(){super('SecretScene');}
+
+  create(){
+    this.audioManager=new AudioManager(this);this.audioManager.playMusic('endingMusic');this.cameras.main.fadeIn(900,8,3,15);this.cameras.main.setBackgroundColor('#08040f');
+    this.add.image(640,360,'bg-romantic').setDisplaySize(1280,720).setTint(0x8a3a68).setDepth(-20);this.add.rectangle(640,360,1280,720,0x120719,.68).setDepth(-19);
+    this.makeLoveWall();this.makeFallingLove();this.makeCouple();this.makeCenterMessage();this.time.delayedCall(6500,()=>this.makeButtons());
+    gameState.secretUnlocked=true;gameState.currentScene='SecretScene';localStorage.setItem('rescate-de-amor-save',JSON.stringify(gameState));
   }
 
-  create() {
-    this.audioManager = new AudioManager(this);
-    this.audioManager.playMusic('endingMusic');
-    this.cameras.main.setBackgroundColor('#0a0512');
-    this.particleManager = new ParticleManager(this);
-
-    // Background with romantic lighting
-    const bg = this.add.rectangle(this.scale.width / 2, this.scale.height / 2, this.scale.width, this.scale.height, 0x0a0512, 1);
-
-    // Decorative string lights
-    const lightsBg = this.add.graphics();
-    lightsBg.fillStyle(0x1a0f25, 1);
-    lightsBg.fillRect(0, 0, this.scale.width, this.scale.height);
-    lightsBg.generateTexture('night-sky', this.scale.width, this.scale.height);
-    this.add.image(this.scale.width / 2, this.scale.height / 2, 'night-sky').setOrigin(0.5);
-    lightsBg.destroy();
-
-    // Fairy lights animation
-    for (let i = 0; i < 20; i++) {
-      const x = (i % 5) * (this.scale.width / 5) + 50;
-      const y = Math.floor(i / 5) * 80 + 100;
-      const light = this.add.circle(x, y, 4, 0xffd7a8, 0.8);
-      
-      this.tweens.add({
-        targets: light,
-        alpha: 0.3,
-        duration: 1500 + Math.random() * 1000,
-        yoyo: true,
-        repeat: -1,
-      });
-    }
-
-    // Title
-    const title = this.add.text(this.scale.width / 2, 80, 'NUESTRA HISTORIA', {
-      fontFamily: 'monospace',
-      fontSize: '36px',
-      color: '#f8e9ff',
-      stroke: '#5a2a5a',
-      strokeThickness: 3,
-      fontStyle: 'bold',
-    }).setOrigin(0.5);
-
-    const subtitle = this.add.text(this.scale.width / 2, 130, 'apenas comienza...', {
-      fontFamily: 'monospace',
-      fontSize: '18px',
-      color: '#ffd7ef',
-    }).setOrigin(0.5);
-
-    // Photo panels
-    this.createPhotoPanel(this.scale.width / 2 - 200, this.scale.height / 2 - 30, 'NUESTRO RECUERDO', 1);
-    this.createPhotoPanel(this.scale.width / 2 + 200, this.scale.height / 2 - 30, '19 • 09 • 2025', 2);
-
-    // Bottom message
-    const message = this.add.text(this.scale.width / 2, this.scale.height - 150, 'Hecho con ❤️ para ti 💕', {
-      fontFamily: 'monospace',
-      fontSize: '20px',
-      color: '#fef5ff',
-      fontStyle: 'bold',
-    }).setOrigin(0.5);
-
-    // Floating petals
-    for (let i = 0; i < 40; i++) {
-      const petal = this.add.text(
-        Math.random() * this.scale.width,
-        Math.random() * this.scale.height,
-        Math.random() > 0.5 ? '🌹' : '🌸',
-        { fontSize: '16px' }
-      );
-      petal.setAlpha(0.2 + Math.random() * 0.3);
-      
-      this.tweens.add({
-        targets: petal,
-        y: petal.y + 400,
-        x: petal.x + (Math.random() - 0.5) * 200,
-        alpha: 0,
-        duration: 4000 + Math.random() * 3000,
-        delay: Math.random() * 1000,
-        onComplete: () => petal.destroy(),
-      });
-    }
-
-    // Interactive elements
-    const continueBtn = this.add.rectangle(this.scale.width / 2, this.scale.height - 50, 240, 48, 0x2f2238, 1)
-      .setStrokeStyle(3, 0xf7d98a, 1)
-      .setInteractive({ useHandCursor: true });
-
-    const btnText = this.add.text(this.scale.width / 2, this.scale.height - 50, 'CONTINUARÁ...', {
-      fontFamily: 'monospace',
-      fontSize: '18px',
-      color: '#fff',
-      fontStyle: 'bold',
-    }).setOrigin(0.5);
-
-    continueBtn.on('pointerover', () => {
-      this.tweens.add({ targets: continueBtn, scaleX: 1.08, scaleY: 1.08, duration: 100 });
-      continueBtn.setFillStyle(0x4a3350);
-    });
-
-    continueBtn.on('pointerout', () => {
-      this.tweens.add({ targets: continueBtn, scaleX: 1, scaleY: 1, duration: 100 });
-      continueBtn.setFillStyle(0x2f2238);
-    });
-
-    const goToMenu = () => {
-      this.cameras.main.fadeOut(800);
-      this.time.delayedCall(800, () => {
-        gameState.secretUnlocked = true;
-        gameState.currentScene = 'SecretScene';
-        localStorage.setItem('rescate-de-amor-save', JSON.stringify(gameState));
-        this.scene.start('MenuScene');
-      });
-    };
-
-    continueBtn.on('pointerdown', goToMenu);
-    this.input.keyboard.once('keydown-SPACE', goToMenu);
-    this.input.keyboard.once('keydown-ENTER', goToMenu);
+  makeLoveWall(){
+    const colors=['#ff8fbd','#ffd0df','#f3b4ff','#ffd98c','#ffffff'];this.loveTexts=[];
+    for(let i=0;i<58;i++){const x=35+(i%10)*132+(i%2)*22,y=34+Math.floor(i/10)*112+(i%3)*10,text=i%5===0?['❤️','💕','💗','🌹'][i%4]:'TE AMO';const item=this.add.text(x,y,text,{fontFamily:'monospace',fontSize:`${text==='TE AMO'?15+(i%4)*3:18+(i%3)*5}px`,color:colors[i%colors.length],fontStyle:'bold',stroke:'#3b102d',strokeThickness:3}).setOrigin(.5).setDepth(2).setAlpha(0).setAngle((i%5-2)*2);this.loveTexts.push(item);this.tweens.add({targets:item,alpha:{from:0,to:.38+(i%3)*.13},scale:{from:.65,to:1},y:item.y-8-(i%4)*2,duration:650,delay:80*i,ease:'Back.easeOut',onComplete:()=>this.tweens.add({targets:item,alpha:{from:item.alpha,to:Math.max(.22,item.alpha-.2)},scale:1.06,duration:1800+(i%5)*260,yoyo:true,repeat:-1,ease:'Sine.easeInOut'})});}
   }
 
-  createPhotoPanel(x, y, label, index) {
-    // Frame
-    const frame = this.add.rectangle(x, y, 280, 240, 0x3c2c54, 0.9);
-    frame.setStrokeStyle(4, 0xf7d98a, 1);
-
-    // Decorative corners
-    const cornerSize = 8;
-    const corners = this.add.graphics();
-    corners.fillStyle(0xf7d98a, 0.5);
-    for (let i = 0; i < 4; i++) {
-      const cx = i % 2 === 0 ? x - 140 : x + 140;
-      const cy = i < 2 ? y - 120 : y + 120;
-      corners.fillRect(cx - cornerSize / 2, cy - cornerSize / 2, cornerSize, cornerSize);
-    }
-    corners.setDepth(3);
-
-    // Content inside - Paola and Mateo scene
-    const contentGfx = this.add.graphics();
-    
-    if (index === 1) {
-      // Paola
-      contentGfx.fillStyle(0xf7d7b7, 1);
-      contentGfx.fillCircle(28, 22, 15);
-      contentGfx.fillStyle(0x5d3a2d, 1);
-      contentGfx.fillRoundedRect(12, 5, 31, 13, 3);
-      contentGfx.fillStyle(0x2d2f54, 1);
-      contentGfx.fillRect(14, 36, 28, 22);
-      contentGfx.fillStyle(0xf6f1ff, 1);
-      contentGfx.fillRect(17, 39, 22, 13);
-    } else {
-      // Mateo and Paola together
-      contentGfx.fillStyle(0xf7d7b7, 1);
-      contentGfx.fillCircle(22, 24, 15);
-      contentGfx.fillCircle(58, 24, 15);
-      
-      // Heart between them
-      contentGfx.fillStyle(0xff69b4, 1);
-      contentGfx.fillCircle(36, 42, 6);
-      contentGfx.fillCircle(44, 42, 6);
-      contentGfx.fillTriangle(32, 44, 48, 44, 40, 54);
-    }
-    
-    const key=`secret-photo-${index}`; contentGfx.generateTexture(key, 80, 65);
-    this.add.image(x, y - 30, key).setScale(2.5);
-    contentGfx.destroy();
-    this.add.image(x-34,y-28,'paola-final',index===1?9:7).setScale(.62).setDepth(8);
-    this.add.image(x+34,y-28,'mateo-final',index===1?3:4).setScale(.61).setDepth(8).setFlipX(true);
-
-    // Label
-    this.add.text(x, y + 100, label, {
-      fontFamily: 'monospace',
-      fontSize: '14px',
-      color: '#ffd7ef',
-    }).setOrigin(0.5);
-
-    // Decorative hearts
-    this.add.text(x - 120, y + 50, '❤️', { fontSize: '20px' }).setOrigin(0.5);
-    this.add.text(x + 120, y + 50, '❤️', { fontSize: '20px' }).setOrigin(0.5);
+  makeFallingLove(){
+    this.fallers=[];for(let i=0;i<18;i++){const symbol=this.add.text(Math.random()*1280,-40-Math.random()*720,['♥','🌹','✦'][i%3],{fontFamily:'monospace',fontSize:`${12+i%4*4}px`,color:i%3===1?'#ffadc8':'#ff75ad'}).setOrigin(.5).setDepth(i%2?5:1).setAlpha(.35+.3*Math.random());this.fallers.push(symbol);this.tweens.add({targets:symbol,y:770,x:symbol.x+(Math.random()-.5)*180,angle:(Math.random()-.5)*220,duration:4300+Math.random()*2600,delay:Math.random()*1800,repeat:-1});}
   }
+
+  makeCouple(){
+    this.paola=this.add.image(585,555,'paola-final',8).setScale(1.05).setDepth(25);this.mateo=this.add.image(690,555,'mateo-final',3).setScale(1.03).setFlipX(true).setDepth(24);this.assertUniqueCouple();
+    this.tweens.add({targets:[this.paola,this.mateo],y:'-=5',duration:1250,yoyo:true,repeat:-1,ease:'Sine.easeInOut'});this.time.delayedCall(2600,()=>{this.paola.setX(610).setFrame(8);this.mateo.setX(667).setFrame(3);for(let i=0;i<16;i++){const h=this.add.text(638+(Math.random()-.5)*130,520+Math.random()*70,'♥',{fontSize:`${12+Math.random()*18}px`,color:'#ff78ae'}).setOrigin(.5).setDepth(28);this.tweens.add({targets:h,y:h.y-160,x:h.x+(Math.random()-.5)*80,alpha:0,duration:1200+Math.random()*600,onComplete:()=>h.destroy()});}this.assertUniqueCouple();});
+  }
+
+  assertUniqueCouple(){for(const [key,name] of [['paola-final','Paola'],['mateo-final','Mateo']]){const count=this.children.list.filter(o=>o.visible&&o.texture?.key===key).length;if(count!==1)console.error(`[FINAL QA] ${name}: ${count} sprites visibles`);}}
+
+  makeCenterMessage(){
+    const glow=this.add.rectangle(640,290,940,285,0x100713,.76).setStrokeStyle(4,0xa7487b,.45).setDepth(30).setAlpha(0);const roses=this.add.text(640,175,'🌹  ❤️  🌹',{fontSize:'34px'}).setOrigin(.5).setDepth(33).setAlpha(0);const title=this.add.text(640,260,'❤️ FELIZ ANIVERSARIO MI AMOR ❤️',{fontFamily:'monospace',fontSize:'38px',color:'#fff0cc',fontStyle:'bold',align:'center',stroke:'#6d174d',strokeThickness:8}).setOrigin(.5).setDepth(33).setScale(.7).setAlpha(0);const subtitle=this.add.text(640,325,'Por nosotros.\n\n19 • 09 • 2025',{fontFamily:'monospace',fontSize:'23px',color:'#ffd3e3',align:'center',lineSpacing:5,stroke:'#4a173b',strokeThickness:5}).setOrigin(.5).setDepth(33).setAlpha(0);
+    this.time.delayedCall(3300,()=>{this.tweens.add({targets:glow,alpha:.82,duration:700});this.tweens.add({targets:[roses,subtitle],alpha:1,duration:900});this.tweens.add({targets:title,alpha:1,scale:1.05,duration:850,ease:'Back.easeOut',onComplete:()=>this.tweens.add({targets:title,scale:1,duration:280})});for(let i=0;i<14;i++){const h=this.add.text(640,260,'♥',{fontSize:`${12+i%4*4}px`,color:'#ff8fbd'}).setOrigin(.5).setDepth(32);const angle=i/14*Math.PI*2;this.tweens.add({targets:h,x:640+Math.cos(angle)*(330+i%3*40),y:260+Math.sin(angle)*(120+i%2*35),alpha:0,duration:1100+i*35,onComplete:()=>h.destroy()});}});
+    this.cameras.main.zoomTo(.96,8500,'Sine.easeInOut');
+  }
+
+  makeButtons(){
+    const make=(x,label,action)=>this.add.text(x,665,label,{fontFamily:'monospace',fontSize:'15px',color:'#fff5dd',backgroundColor:'#5d234b',padding:{x:18,y:10},stroke:'#28101f',strokeThickness:2}).setOrigin(.5).setDepth(40).setAlpha(0).setInteractive({useHandCursor:true}).on('pointerdown',action);
+    const replay=make(430,'❤️ VOLVER A VER NUESTRA HISTORIA',()=>this.leaveTo('IntroScene'));const letter=make(850,'CARTA ❤️',()=>this.leaveTo('EndingScene',{letterOnly:true}));this.tweens.add({targets:[replay,letter],alpha:1,y:650,duration:600,ease:'Back.easeOut'});
+  }
+
+  leaveTo(sceneKey,data){if(this.leaving)return;this.leaving=true;this.cameras.main.once('camerafadeoutcomplete',()=>this.scene.start(sceneKey,data));this.cameras.main.fadeOut(650,8,3,15);}
 }

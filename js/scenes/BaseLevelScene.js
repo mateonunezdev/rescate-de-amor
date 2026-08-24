@@ -1,6 +1,6 @@
 import Player from '../entities/Player.js?v=20260820-pickup-combat-24';
-import Enemy from '../entities/Enemy.js?v=20260823-professional-polish-29';
-import Collectible from '../entities/Collectible.js?v=20260820-pickup-combat-24';
+import Enemy from '../entities/Enemy.js?v=20260823-master-final-30';
+import Collectible from '../entities/Collectible.js?v=20260823-master-final-30';
 import UIManager from '../ui/UIManager.js?v=20260821-boss-letter-polish-28';
 import AudioManager from '../systems/AudioManager.js';
 import ParticleManager from '../systems/ParticleManager.js';
@@ -41,7 +41,7 @@ export default class BaseLevelScene extends Phaser.Scene {
     this.projectiles = this.physics.add.group({ allowGravity: false });
     this.enemies = this.physics.add.group();
     this.dataDef.enemies.forEach(e => { const enemy = new Enemy(this, e.x, e.y, e); this.enemies.add(enemy); });
-    this.general=this.enemies.getChildren().find(e=>e.type==='general');if(this.general){this.generalMaxHealth=this.general.health;this.generalHud=this.add.container(640,128).setScrollFactor(0).setDepth(950);const gb=this.add.rectangle(0,0,360,46,0x1a1025,.94).setStrokeStyle(3,0xe4b75d);this.generalFill=this.add.rectangle(-166,12,332,10,0xc24983).setOrigin(0,.5);const gt=this.add.text(0,-9,'⚔ GENERAL PALOMO ⚔',{fontFamily:'monospace',fontSize:'17px',color:'#ffe6ad'}).setOrigin(.5);this.generalHud.add([gb,this.generalFill,gt]);}
+    this.general=this.enemies.getChildren().find(e=>e.miniBoss||e.type==='general');if(this.general){this.generalMaxHealth=this.general.health;this.generalHud=this.add.container(640,128).setScrollFactor(0).setDepth(950).setVisible(false);const gb=this.add.rectangle(0,0,410,46,0x1a1025,.94).setStrokeStyle(3,0xe4b75d);this.generalFill=this.add.rectangle(-190,12,380,10,0xc24983).setOrigin(0,.5);const gt=this.add.text(0,-9,`⚔ ${this.general.displayName||'GENERAL PALOMO'} ⚔`,{fontFamily:'monospace',fontSize:'17px',color:'#ffe6ad'}).setOrigin(.5);this.generalHud.add([gb,this.generalFill,gt]);}
     this.setupEncounterDialogues();
     this.physics.add.collider(this.enemies, this.solids);
     this.physics.add.overlap(this.player, this.enemies, (p, e) => p.takeDamage(e.damage));
@@ -54,9 +54,9 @@ export default class BaseLevelScene extends Phaser.Scene {
   }
 
   setupEncounterDialogues(){
-    const target=this.scene.key==='Level1Scene'?this.enemies.getChildren().find(e=>e.type==='soldier'):this.scene.key==='Level2Scene'?this.enemies.getChildren().find(e=>e.type==='mage'):this.general;
+    const target=this.general||this.enemies.getChildren().find(e=>e.type==='soldier'||e.type==='mage');
     if(!target)return;
-    const lines=this.scene.key==='Level1Scene'?[['SOLDADO PALOMA','¡Nadie pasa por aquí!','right'],['PAOLA','Entonces hazte a un lado.','left']]:this.scene.key==='Level2Scene'?[['MAGO PALOMA','La reina ordenó que no llegaras al castillo.','right'],['PAOLA','Pues dile que voy en camino.','left']]:[['GENERAL PALOMO','Has llegado demasiado lejos.','right'],['PAOLA','No lo suficiente.','left'],['GENERAL PALOMO','Tu viaje termina aquí.','right'],['PAOLA','¿Eso lo decides tú?','left']];
+    const lines=this.scene.key==='Level1Scene'?[['CAPITÁN PALOMA','Hasta aquí llegaste.','right'],['PAOLA','Solo dime dónde está Mateo.','left'],['CAPITÁN PALOMA','En un lugar al que nunca llegarás.','right'],['PAOLA','Entonces tendré que demostrarte lo contrario.','left']]:this.scene.key==='Level2Scene'?[['ARCHIMAGO PALOMA','La reina sabía que vendrías.','right'],['PAOLA','Entonces también sabe que no voy a detenerme.','left'],['ARCHIMAGO PALOMA','Eso lo veremos.','right']]:[['GENERAL PALOMO','Has llegado demasiado lejos.','right'],['PAOLA','No lo suficiente.','left'],['GENERAL PALOMO','Tu viaje termina aquí.','right'],['PAOLA','¿Eso lo decides tú?','left']];
     this.encounterDialogue={target,lines,shown:false};
   }
 
@@ -103,7 +103,7 @@ export default class BaseLevelScene extends Phaser.Scene {
     if(this.dataDef.theme==='forest'){this.add.ellipse(p.x,p.y+10,p.w*.72,8,0x263b2c,.7).setDepth(7);for(let n=0;n<3;n++)this.add.line(0,0,p.x-p.w*.35+n*p.w*.3,p.y+2,p.x-p.w*.25+n*p.w*.3,p.y+21,0x5b4637,.85).setOrigin(0,0).setDepth(9);}else if(this.dataDef.theme==='garden'){for(let n=0;n<3;n++)this.add.arc(p.x-p.w*.3+n*p.w*.3,p.y+6,11,40,300,false,0x397047,.7).setDepth(9);}else{for(let n=0;n<Math.floor(p.w/42);n++)this.add.rectangle(p.x-p.w/2+22+n*42,p.y+7,36,2,0x75627d,.55).setDepth(9);}
   });}
 
-  makeHazards(){const layouts={forest:[820,1450,2110],garden:[1080,1780,2670],castle:[820,1510,2350,2990]},key=this.dataDef.theme==='castle'?'hazard-flame':this.dataDef.theme==='garden'?'hazard-thorns':'hazard-puddle';this.hazards=[];(layouts[this.dataDef.theme]||[]).forEach((x,i)=>{const h=this.add.image(x,642,key).setDepth(12).setScale(this.dataDef.theme==='castle'?1:1.08);this.physics.add.existing(h,true);h.body.setSize(Math.min(42,h.width-8),Math.min(18,h.height-6));h.phase=i*430;h.warning=this.add.ellipse(x,646,74,24,this.dataDef.accent,.08).setStrokeStyle(2,this.dataDef.accent,.65).setDepth(11);this.hazards.push(h);this.physics.add.overlap(this.player,h,()=>{if(h.dangerous)this.player.takeDamage(1);});});}
+  makeHazards(){const layouts={forest:[620,880,1160,1430,1690,1970,2240,2500,2760,3220],garden:[580,830,1090,1350,1610,1880,2140,2400,2670,2930,3190,3450,3840],castle:[570,820,1080,1330,1590,1850,2110,2370,2630,2890,3150,3410,3670,3900,4310]},key=this.dataDef.theme==='castle'?'hazard-flame':this.dataDef.theme==='garden'?'hazard-thorns':'hazard-puddle';this.hazards=[];(layouts[this.dataDef.theme]||[]).forEach((x,i)=>{const h=this.add.image(x,642,key).setDepth(12).setScale(this.dataDef.theme==='castle'?1:1.08);this.physics.add.existing(h,true);h.body.setSize(Math.min(42,h.width-8),Math.min(18,h.height-6));h.phase=i*430;h.warning=this.add.ellipse(x,646,74,24,this.dataDef.accent,.08).setStrokeStyle(2,this.dataDef.accent,.65).setDepth(11);this.hazards.push(h);this.physics.add.overlap(this.player,h,()=>{if(h.dangerous)this.player.takeDamage(1);});});}
 
   validateRoute(){const gravity=900,jump=450,run=350,maxRise=jump*jump/(2*gravity),route=[{x:100,y:648,w:20},...this.dataDef.platforms];const report=[];for(let i=1;i<route.length;i++){const a=route[i-1],b=route[i],verticalGap=Math.max(0,a.y-b.y),horizontalGap=Math.max(0,Math.abs(b.x-a.x)-(a.w+b.w)/2);const disc=jump*jump-2*gravity*verticalGap;const flight=disc>=0?(jump+Math.sqrt(disc))/gravity:0;const maxHorizontal=run*flight;report.push({jump:i,verticalGap,horizontalGap,maxHorizontal:Math.round(maxHorizontal),valid:verticalGap<=maxRise-8&&horizontalGap<=maxHorizontal*.88});}const invalid=report.filter(x=>!x.valid);console.table(report);if(invalid.length)console.error(`[QA ${this.scene.key}] Saltos fuera de rango`,invalid);else console.info(`[QA ${this.scene.key}] Ruta principal validada: ${report.length} saltos`);}
 
@@ -112,7 +112,7 @@ export default class BaseLevelScene extends Phaser.Scene {
     this.dataDef.collectibles.forEach(c=>{if(c.memory&&gameState.memories.includes(c.type))return;const item=new Collectible(this,c.x,c.y,c.type);item.isMemory=!!c.memory;item.collectibleData=c;this.collectibles.push(item);this.physics.add.overlap(this.player,item,()=>this.attemptPickup(item));});
   }
 
-  attemptPickup(item){if(!item?.active||item.collected||item.magnetizing)return;if(item.type==='card3'&&this.enemies.getChildren().some(e=>e.active&&['guard','general'].includes(e.type)&&e.health>=5)){if(!this.guardMessageAt||this.time.now-this.guardMessageAt>1100){this.guardMessageAt=this.time.now;this.uiManager.showMessage('GENERAL PALOMO · Derrótalo para recuperar la carta','#ffe0ef',1000);}return;}item.magnetTo(this.player,()=>item.active&&this.collect(item));}
+  attemptPickup(item){if(!item?.active||item.collected||item.magnetizing)return;const guardian=this.enemies.getChildren().find(e=>e.active&&e.miniBoss&&e.health>0);if(item.type.startsWith('card')&&guardian){if(!this.guardMessageAt||this.time.now-this.guardMessageAt>1100){this.guardMessageAt=this.time.now;this.uiManager.showMessage(`${guardian.displayName||'GUARDIÁN'} · Derrótalo para recuperar la carta`,'#ffe0ef',1000);}return;}item.magnetTo(this.player,()=>item.active&&this.collect(item));}
 
   collect(item) {
     if(item.collected||(item.type.startsWith('card')&&this.cardPickupInProgress))return; const type=item.type;if(type.startsWith('card'))this.cardPickupInProgress=true;item.collect();
@@ -135,10 +135,11 @@ export default class BaseLevelScene extends Phaser.Scene {
     const continueZone=this.add.zone(640,465,240,80).setScrollFactor(0).setDepth(1500).setInteractive({useHandCursor:true});this.cardContinueZone=continueZone;
     this.tweens.add({targets:layer,scale:1,alpha:1,duration:380,ease:'Back.easeOut'});this.tweens.add({targets:glow,scale:1.12,alpha:.25,duration:650,yoyo:true,repeat:-1});
     this.particleManager.burst(640,345,0xff6eac,32,280);this.audioManager.playSfx('checkpoint');
-    let closing=false,cardCanClose=false,enableCloseTimer=null,close;
-    const cleanup=()=>{enableCloseTimer?.remove(false);shade.off('pointerdown',close).removeInteractive();button.off('pointerdown',close).removeInteractive();if(continueZone.active){continueZone.off('pointerdown',close);continueZone.destroy();}this.cardContinueZone=null;this.input.keyboard.off('keydown-ENTER',close);this.input.keyboard.off('keydown-SPACE',close);};
+    let closing=false,cardCanClose=false,enableCloseTimer=null,close,keyboardClose,cleaned=false;
+    const cleanup=()=>{if(cleaned)return;cleaned=true;if(enableCloseTimer?.active)enableCloseTimer.remove(false);if(shade?.scene){shade.off('pointerdown',close);shade.removeInteractive();}if(button?.scene){button.off('pointerdown',close);button.removeInteractive();}if(continueZone?.scene&&continueZone.active){continueZone.off('pointerdown',close);continueZone.destroy();}this.cardContinueZone=null;this.input.keyboard?.off('keydown-ENTER',keyboardClose);this.input.keyboard?.off('keydown-SPACE',keyboardClose);};
     close=()=>{if(!cardCanClose||closing||!layer.active)return;closing=true;cleanup();this.tweens.killTweensOf([layer,glow]);this.tweens.add({targets:layer,alpha:0,scale:.9,duration:220,onComplete:()=>{if(layer.active)layer.destroy();this.cardOverlay=null;this.cardPickupInProgress=false;this.paused=false;this.physics.resume();this.uiManager.container.setVisible(true).setAlpha(1);this.refreshHud();this.uiManager.showMessage('SALIDA DESBLOQUEADA','#ffe7a8',1500);}});};
-    enableCloseTimer=this.time.delayedCall(300,()=>{if(!layer.active)return;cardCanClose=true;continueZone.once('pointerdown',close);button.once('pointerdown',close);shade.once('pointerdown',close);this.input.keyboard.once('keydown-ENTER',close);this.input.keyboard.once('keydown-SPACE',close);});
+    keyboardClose=()=>{cardCanClose=true;close();};this.input.keyboard.once('keydown-ENTER',keyboardClose);this.input.keyboard.once('keydown-SPACE',keyboardClose);
+    enableCloseTimer=this.time.delayedCall(300,()=>{if(!layer.active)return;cardCanClose=true;continueZone.once('pointerdown',close);button.once('pointerdown',close);shade.once('pointerdown',close);});
     this.events.once('shutdown',cleanup);
   }
 
@@ -195,7 +196,7 @@ export default class BaseLevelScene extends Phaser.Scene {
     if(this.encounterDialogue&&!this.encounterDialogue.shown&&Math.abs(this.player.x-this.encounterDialogue.target.x)<390)this.startEncounterDialogue();
     this.cameras.main.setFollowOffset(Phaser.Math.Linear(this.cameras.main.followOffset.x,-this.player.body.velocity.x*.12,.035),Phaser.Math.Linear(this.cameras.main.followOffset.y,this.player.body.velocity.y<0?28:0,.035));this.updateExitState();this.enemies?.getChildren().forEach(e=>e.update(delta));
     this.collectibles?.forEach(item=>{if(item.active&&!item.collected&&!item.magnetizing&&Phaser.Math.Distance.Between(this.player.x,this.player.y,item.x,item.y)<=item.pickupRange)this.attemptPickup(item);});
-    if(this.generalHud){const alive=this.general?.active&&this.general.health>0;this.generalHud.setVisible(alive&&Math.abs(this.player.x-this.general.x)<620);this.generalFill.displayWidth=332*Math.max(0,this.general.health/this.generalMaxHealth);}
+    if(this.generalHud){const alive=this.general?.active&&this.general.health>0;this.generalHud.setVisible(alive&&Math.abs(this.player.x-this.general.x)<620);this.generalFill.displayWidth=380*Math.max(0,this.general.health/this.generalMaxHealth);}
     this.projectiles?.getChildren().forEach(s=>{s.x+=s.travelDir*s.travelSpeed*delta/1000;s.body.updateFromGameObject();const targets=this.enemies.getChildren().filter(e=>e.active&&Math.abs(e.x-s.x)<360&&Math.sign(e.x-s.x)===s.travelDir);if(targets.length){targets.sort((a,b)=>Math.abs(a.x-s.x)-Math.abs(b.x-s.x));s.y=Phaser.Math.Linear(s.y,targets[0].y,.1);s.body.updateFromGameObject();}s.trailTimer=(s.trailTimer||0)-delta;if(s.active&&s.trailTimer<=0){s.trailTimer=70;const h=this.add.text(s.x,s.y,'♥',{fontSize:'9px',color:'#ff86bd'}).setOrigin(.5).setDepth(10);this.tweens.add({targets:h,x:h.x-s.travelDir*14,alpha:0,scale:.3,duration:260,onComplete:()=>h.destroy()});}});
     this.hazards?.forEach(h=>{h.phase=(h.phase+delta)%2400;h.dangerous=h.phase>850&&h.phase<1550;h.body.enable=h.dangerous;const warning=h.phase>500&&h.phase<850;h.setAlpha(h.dangerous?1:(warning?0.65:0.28)).setScale(1,h.dangerous?1:(warning?0.72:0.45));h.warning.setAlpha(warning?0.9:(h.dangerous?0.18:0.05)).setScale(warning?1.25:1);});
     if(this.player.invulnerable>0){this.player.invulnerable-=delta;this.player.setAlpha(this.player.invulnerable%100<50?.35:1);}else this.player.setAlpha(1);if(this.player.y>760)this.showGameOver();

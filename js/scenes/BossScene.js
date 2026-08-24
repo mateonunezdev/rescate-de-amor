@@ -79,7 +79,7 @@ export default class BossScene extends Phaser.Scene {
     this.cell=this.add.container(1160,470).setDepth(18);this.cell.add(this.add.rectangle(0,0,130,175,0x11101a,.16).setStrokeStyle(9,0x595265));for(let i=-2;i<=2;i++)this.cell.add(this.add.rectangle(i*25,0,6,165,0x272532).setStrokeStyle(2,0x777080));this.add.text(1160,575,'MATEO',{fontFamily:'monospace',fontSize:'13px',color:'#ffe8c4',backgroundColor:'#211327',padding:{x:6,y:3}}).setOrigin(.5).setDepth(20);
 
     // Attack patterns
-    this.attackTimer = 0;this.bossInvulnerable=0;
+    this.attackTimer = 0;this.bossInvulnerable=0;this.bossState='IDLE';this.stateUntil=0;this.mateoCueTimer=4200;
     this.attackCooldown = 1200;
     this.bossMoving = false;
     this.projectiles = [];
@@ -169,11 +169,13 @@ export default class BossScene extends Phaser.Scene {
     }
   }
 
-  bossPhasedMovement() {
-    const targetX = this.bossHomeX;
-    const bobAmount = 20 + this.phase * 10;
-    const bobSpeed = 600 - this.phase * 100;
-    this.boss.x=Phaser.Math.Linear(this.boss.x,targetX,.04);this.boss.y=this.bossHomeY+Math.sin((this.time.now/bobSpeed))*Math.min(14,bobAmount);
+  bossPhasedMovement(delta) {
+    if(!this.boss?.active||['DASH','MELEE','RETREAT','HURT','DEFEAT'].includes(this.bossState))return;
+    const distance=this.boss.x-this.player.x,preferred=this.phase===1?440:this.phase===2?390:340;
+    this.bossState=Math.abs(distance-preferred)>80?'CHASE':'IDLE';
+    const targetX=Phaser.Math.Clamp(this.player.x+preferred,650,1010);const targetY=Phaser.Math.Clamp(320+(this.player.y-500)*.22+Math.sin(this.time.now/(520-this.phase*70))*55,220,440);
+    const follow=.018+this.phase*.006;this.boss.x=Phaser.Math.Linear(this.boss.x,targetX,follow);this.boss.y=Phaser.Math.Linear(this.boss.y,targetY,follow*1.15);
+    this.bossHomeX=targetX;this.bossHomeY=targetY;
     this.bossAura.setPosition(this.boss.x,this.boss.y).setScale(1+Math.sin(this.time.now/240)*.08);
     this.bossBirds.forEach((b,i)=>b.setPosition(this.boss.x+Math.cos(this.time.now/500+i*2.1)*88,this.boss.y+Math.sin(this.time.now/500+i*2.1)*55));
   }
@@ -181,8 +183,8 @@ export default class BossScene extends Phaser.Scene {
   performBossAttack() {
     const warning=this.add.text(this.boss.x-120,this.boss.y+105,this.phase===1?'¡BANDADA!':this.phase===2?'¡BESO HIPNÓTICO!':'¡CORAZÓN VACÍO!',{fontFamily:'monospace',fontSize:'15px',color:'#fff0a8',backgroundColor:'#621c56',padding:{x:8,y:5}}).setOrigin(.5).setDepth(80);
     this.tweens.add({targets:warning,alpha:0,duration:650,onComplete:()=>warning.destroy()});
-    const phase=this.phase;this.attackCycle=(this.attackCycle||0)+1;
-    if(phase===1)this.attackPattern1();else if(phase===2&&this.attackCycle%3===0)this.attackPatternFeathers();else if(phase===2)this.attackPattern2();else if(this.attackCycle%2===0)this.attackPatternEmptyHeart();else this.attackPattern3();
+    const phase=this.phase;this.attackCycle=(this.attackCycle||0)+1;this.bossState='CAST';
+    if(phase===1){this.attackCycle%3===0?this.attackDive():this.attackPattern1();}else if(phase===2){const attacks=[()=>this.attackPattern2(),()=>this.attackPatternFeathers(),()=>this.attackDash()];attacks[this.attackCycle%attacks.length]();}else{const attacks=[()=>this.attackPattern3(),()=>this.attackPatternEmptyHeart(),()=>this.attackMelee(),()=>this.attackPatternFeathers()];attacks[this.attackCycle%attacks.length]();}
     this.bossFrameResetIn=520;
   }
 
@@ -259,6 +261,23 @@ export default class BossScene extends Phaser.Scene {
     this.physics.add.overlap(this.player,heart,()=>this.onBossDamagePlayer(heart));this.projectiles.push(heart);this.time.delayedCall(700,()=>this.bossAura?.active&&this.bossAura.setFillStyle(0xd33c9c,.14).setStrokeStyle(4,0xff83c5,.28));
   }
 
+  attackDive(){
+    this.bossState='DASH';if(this.bossHasFinalArt)this.boss.setFrame(4);const mark=this.add.circle(this.player.x,585,55,0xff3f91,.1).setStrokeStyle(5,0xffd16f,.9).setDepth(70);
+    this.tweens.add({targets:mark,scale:1.35,alpha:.85,duration:430,yoyo:true,onComplete:()=>{mark.destroy();if(this.defeated||!this.boss?.active)return;const tx=Phaser.Math.Clamp(this.player.x,170,930),ty=500;this.tweens.add({targets:this.boss,x:tx,y:ty,duration:320,ease:'Cubic.easeIn',onUpdate:()=>{if(Phaser.Math.Distance.Between(this.boss.x,this.boss.y,this.player.x,this.player.y)<85)this.player.takeDamage(1);},onComplete:()=>this.retreatBoss()});}});
+  }
+
+  attackDash(){
+    this.bossState='DASH';if(this.bossHasFinalArt)this.boss.setFrame(2);const lane=Phaser.Math.Clamp(this.player.y,300,520),warning=this.add.rectangle(640,lane,1180,12,0xffd16f,.5).setDepth(70);
+    this.tweens.add({targets:warning,alpha:.1,duration:180,yoyo:true,repeat:2,onComplete:()=>{warning.destroy();if(this.defeated||!this.boss?.active)return;this.boss.setPosition(1080,lane);this.tweens.add({targets:this.boss,x:170,duration:520,ease:'Cubic.easeInOut',onUpdate:()=>{if(Phaser.Math.Distance.Between(this.boss.x,this.boss.y,this.player.x,this.player.y)<90)this.player.takeDamage(1);},onComplete:()=>this.retreatBoss()});}});
+  }
+
+  attackMelee(){
+    this.bossState='MELEE';if(this.bossHasFinalArt)this.boss.setFrame(2);const tx=Phaser.Math.Clamp(this.player.x+110,180,980),ty=Phaser.Math.Clamp(this.player.y-40,280,500);
+    this.tweens.add({targets:this.boss,x:tx,y:ty,duration:380,ease:'Sine.easeIn',onComplete:()=>{if(this.defeated)return;const fan=this.add.arc(this.boss.x-65,this.boss.y,88,120,240,false,0xff6db1,.28).setStrokeStyle(8,0xffd1e8).setDepth(72);if(Phaser.Math.Distance.Between(this.boss.x,this.boss.y,this.player.x,this.player.y)<180)this.player.takeDamage(1);this.tweens.add({targets:fan,scale:1.4,alpha:0,duration:260,onComplete:()=>fan.destroy()});this.retreatBoss();}});
+  }
+
+  retreatBoss(){if(this.defeated||!this.boss?.active)return;this.bossState='RETREAT';this.tweens.add({targets:this.boss,x:Phaser.Math.Clamp(this.player.x+410,680,1010),y:Phaser.Math.Clamp(300+Math.random()*100,240,420),duration:520,ease:'Sine.easeOut',onComplete:()=>this.boss?.active&&(this.bossState='IDLE')});}
+
   attackPatternFeathers(){if(this.bossHasFinalArt)this.boss.setFrame(4);const lanes=[250,430,610,790,970];lanes.forEach((x,i)=>{if(i===this.attackCycle%lanes.length)return;const mark=this.add.ellipse(x,610,92,24,0xff5fae,.12).setStrokeStyle(3,0xffd0e6,.8).setDepth(69);this.tweens.add({targets:mark,alpha:1,scaleX:1.2,duration:420,yoyo:true,onComplete:()=>{mark.destroy();if(this.defeated)return;const feather=this.add.image(x,-20,'enemy-feather-shot').setScale(1.25).setAngle(90).setDepth(72);this.physics.add.existing(feather);feather.body.setAllowGravity(false);feather.body.setVelocityY(370);this.physics.add.overlap(this.player,feather,()=>this.onBossDamagePlayer(feather));this.projectiles.push(feather);}});});this.uiManager.showMessage('LLUVIA DE PLUMAS · ¡BUSCA EL ESPACIO SEGURO!','#ffe4f2',1300);}
 
   onBossDamagePlayer(projectile) {
@@ -275,11 +294,10 @@ export default class BossScene extends Phaser.Scene {
       this.audioManager.playSfx('bossHit');
       this.cameras.main.shake(100, 0.008);
       this.particleManager.burst(this.boss.x, this.boss.y, 0xff69b4, 16, 200);
-      this.boss.setAlpha(0.7);
+      this.bossState='HURT';this.boss.setVisible(true).setActive(true).setAlpha(0.7);
       if(this.bossHasFinalArt)this.boss.setFrame(6);
       this.boss.x += 7;
-      this.time.delayedCall(100,()=>{if(!this.boss?.active)return;this.boss.setAlpha(1);if(this.bossHasFinalArt)this.boss.setFrame(this.phase===3?5:0);});
-      this.time.delayedCall(80,()=>this.boss?.active&&(this.boss.x=this.bossHomeX));
+      this.time.delayedCall(130,()=>{if(!this.boss?.active)return;this.boss.setVisible(true).setAlpha(1);this.bossState='RETREAT';if(this.bossHasFinalArt)this.boss.setFrame(this.phase===3?5:0);this.retreatBoss();});
 
       this.updateHealthBar();
 
@@ -309,6 +327,7 @@ export default class BossScene extends Phaser.Scene {
   defeatBoss() {
     if (this.defeated) return;
     this.defeated = true;
+    this.bossState='DEFEAT';this.boss.setVisible(true).setActive(true).setAlpha(1);
     if(this.bossHasFinalArt)this.boss.setFrame(7);
     this.bossHealth = 0;
     this.updateHealthBar();
@@ -360,7 +379,7 @@ export default class BossScene extends Phaser.Scene {
 
     // Boss phase and movement
     this.updateBossPhase();
-    this.bossPhasedMovement();
+    this.boss.setVisible(true).setActive(true).setAlpha(this.bossState==='HURT'?.7:1);this.boss.y=Phaser.Math.Clamp(this.boss.y,210,520);this.bossPhasedMovement(delta);
     if(this.bossFrameResetIn){this.bossFrameResetIn-=delta;if(this.bossFrameResetIn<=0){this.bossFrameResetIn=0;if(this.bossHasFinalArt)this.boss.setFrame(0);}}
 
     // Explicit proximity check avoids tunnelling and guarantees the readable
@@ -380,6 +399,7 @@ export default class BossScene extends Phaser.Scene {
       // Increase difficulty
       this.attackCooldown = Math.max(600, this.attackCooldown - 50);
     }
+    this.mateoCueTimer-=delta;if(this.mateoCueTimer<=0){this.mateoCueTimer=5200+Math.random()*2200;const cue=['¡Paola!','¡Cuidado!','¡Tú puedes!'][Math.floor(Math.random()*3)];this.uiManager.showDialogueBubble('MATEO',cue,{x:980,y:430,tail:'right',width:300,duration:1200});this.mateo.setFrame(2);this.time.delayedCall(700,()=>this.mateo?.active&&this.mateo.setFrame(1));}
 
     // Invulnerability flash
     if (this.player.invulnerable > 0) {
