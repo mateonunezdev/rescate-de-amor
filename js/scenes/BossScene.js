@@ -170,7 +170,8 @@ export default class BossScene extends Phaser.Scene {
     }
   }
 
-  restoreBossVisibility(){if(!this.boss||this.defeated||this.bossHealth<=0)return;this.boss.setVisible(true).setActive(true).setAlpha(1);if(this.boss.body)this.boss.body.enable=true;if(this.bossAura?.active)this.bossAura.setVisible(true).setAlpha(1);this.boss.y=Phaser.Math.Clamp(this.boss.y,250,470);}
+  ensureBossVisible(){if(!this.boss||this.defeated||this.bossHealth<=0)return;this.boss.setVisible(true).setActive(true).setAlpha(1);if(this.boss.body)this.boss.body.enable=true;if(this.bossAura?.active)this.bossAura.setVisible(true).setAlpha(1);this.boss.y=Phaser.Math.Clamp(this.boss.y,250,470);}
+  restoreBossVisibility(){this.ensureBossVisible();}
 
   bossPhasedMovement(delta) {
     if(!this.boss?.active||['DASH','MELEE','RETREAT','HURT','DEFEAT'].includes(this.bossState))return;

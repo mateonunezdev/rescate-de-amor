@@ -1,4 +1,4 @@
-import BaseLevelScene from './BaseLevelScene.js?v=20260823-ai-shield-polish-31';
+import BaseLevelScene from './BaseLevelScene.js?v=20260825-final-qa-33';
 export default class Level1Scene extends BaseLevelScene {
   constructor(){super('Level1Scene',{title:'NIVEL 1 · BOSQUE DE LOS RECUERDOS',objective:'Encuentra el primer recuerdo.  A/D mover · SPACE saltar · X atacar',theme:'forest',background:'bg-forest',width:3400,music:'forestMusic',sky:'#0b1630',skyTop:0x08152b,skyBottom:0x34234c,ground:0x162724,platform:0x263d32,trim:0x88b967,accent:0xff6ea9,
   platforms:[{x:300,y:570,w:170},{x:500,y:515,w:150},{x:700,y:455,w:160},{x:900,y:535,w:170},{x:1100,y:470,w:160},{x:1300,y:405,w:170},{x:1510,y:510,w:180},{x:1720,y:445,w:170},{x:1930,y:550,w:180},{x:2140,y:485,w:170},{x:2350,y:420,w:180},{x:2560,y:525,w:170},{x:2770,y:460,w:180},{x:2960,y:390,w:160},{x:3140,y:500,w:170},{x:3290,y:430,w:150}],

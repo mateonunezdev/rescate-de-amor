@@ -1,4 +1,4 @@
-import BaseLevelScene from './BaseLevelScene.js?v=20260823-ai-shield-polish-31';
+import BaseLevelScene from './BaseLevelScene.js?v=20260825-final-qa-33';
 export default class Level2Scene extends BaseLevelScene {
   constructor(){super('Level2Scene',{title:'NIVEL 2 · JARDÍN DE ROSAS',objective:'Encuentra la estrella y la rosa entre fuentes y setos.',theme:'garden',background:'bg-garden',width:4000,music:'gardenMusic',sky:'#281438',skyTop:0x17132f,skyBottom:0x623052,ground:0x271f2c,platform:0x39323a,trim:0xe0b46c,accent:0xe64a83,
   platforms:[{x:280,y:570,w:160},{x:470,y:510,w:150},{x:660,y:445,w:160},{x:850,y:380,w:150},{x:1040,y:500,w:180},{x:1240,y:435,w:160},{x:1440,y:365,w:170},{x:1640,y:485,w:180},{x:1840,y:415,w:160},{x:2040,y:345,w:170},{x:2240,y:475,w:180},{x:2440,y:405,w:160},{x:2640,y:535,w:180},{x:2840,y:465,w:160},{x:3040,y:395,w:170},{x:3240,y:325,w:160},{x:3440,y:455,w:180},{x:3620,y:385,w:150},{x:3780,y:500,w:160},{x:3910,y:430,w:130}],

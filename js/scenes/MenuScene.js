@@ -395,7 +395,7 @@ export default class MenuScene extends Phaser.Scene {
   showControls() {
     const overlay = this.add.rectangle(this.scale.width / 2, this.scale.height / 2, 620, 360, 0x1d1028, 0.94).setStrokeStyle(4, 0xf7d98a, 1);
     overlay.setDepth(40);
-    const text = this.add.text(this.scale.width / 2, this.scale.height / 2 - 80, 'CONTROLES\n\nA/D o flechas: caminar\nSHIFT: correr\nSPACE/W/↑: saltar\nS/↓: agacharse\nX: atacar\nESC: pausa', {
+    const text = this.add.text(this.scale.width / 2, this.scale.height / 2 - 80, 'CONTROLES\n\nA/D o flechas — mover\nSHIFT — correr\nSPACE/W/↑ — saltar\nZ/J — combo de golpes\nX/K — energía (mantener: cargado)\n↓ + Z — golpe aéreo\nC/L — especial\nV — Escudo de Amor\nESC — pausa', {
       fontFamily: 'monospace',
       fontSize: '22px',
       color: '#f5ebff',

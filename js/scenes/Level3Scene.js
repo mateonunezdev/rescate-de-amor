@@ -1,4 +1,4 @@
-import BaseLevelScene from './BaseLevelScene.js?v=20260823-ai-shield-polish-31';
+import BaseLevelScene from './BaseLevelScene.js?v=20260825-final-qa-33';
 export default class Level3Scene extends BaseLevelScene {
   constructor(){super('Level3Scene',{title:'NIVEL 3 · CASTILLO DE PECHO PALOMA',objective:'Libera el camino a la torre. Mateo te espera.',theme:'castle',background:'bg-castle',width:4500,music:'castleMusic',sky:'#090715',skyTop:0x080611,skyBottom:0x312039,ground:0x17131d,platform:0x30283a,trim:0xc98b59,accent:0xff6b87,
   platforms:[{x:270,y:570,w:150},{x:450,y:505,w:150},{x:630,y:435,w:160},{x:820,y:530,w:170},{x:1010,y:460,w:160},{x:1200,y:390,w:170},{x:1390,y:515,w:180},{x:1580,y:445,w:160},{x:1770,y:375,w:170},{x:1960,y:500,w:180},{x:2150,y:430,w:160},{x:2340,y:360,w:170},{x:2530,y:510,w:180},{x:2720,y:440,w:160},{x:2910,y:370,w:170},{x:3100,y:495,w:180},{x:3290,y:425,w:160},{x:3480,y:355,w:170},{x:3670,y:505,w:180},{x:3860,y:435,w:160},{x:4050,y:365,w:170},{x:4230,y:490,w:160},{x:4390,y:420,w:150}],
