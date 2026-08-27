@@ -1,9 +1,9 @@
-import Player from '../entities/Player.js?v=20260823-ai-shield-polish-31';
+import Player from '../entities/Player.js?v=20260825-level-design-34';
 import UIManager from '../ui/UIManager.js?v=20260823-ai-shield-polish-31';
 import AudioManager from '../systems/AudioManager.js';
 import ParticleManager from '../systems/ParticleManager.js';
 import { gameState } from '../config.js';
-import { TextureFactory } from '../utils/TextureFactory.js?v=20260823-ai-shield-polish-31';
+import { TextureFactory } from '../utils/TextureFactory.js?v=20260825-level-design-34';
 
 export default class BossScene extends Phaser.Scene {
   constructor() {
@@ -18,7 +18,7 @@ export default class BossScene extends Phaser.Scene {
     // Create textures
     TextureFactory.createPlayerTexture(this);
     TextureFactory.createBossTexture(this);
-    TextureFactory.createMateoTexture(this);
+    TextureFactory.createMateoTexture(this);TextureFactory.createGothicCageTexture(this);
     TextureFactory.createEnemyTexture(this,'pigeon');TextureFactory.createCombatTextures(this);
 
     this.createBossArena();
@@ -76,7 +76,7 @@ export default class BossScene extends Phaser.Scene {
     }).setOrigin(0.5).setScrollFactor(0).setDepth(100);
 
     this.mateo=this.add.image(1160,475,'mateo-final',1).setScale(.8).setDepth(12);
-    this.cell=this.add.container(1160,470).setDepth(18);this.cell.add(this.add.rectangle(0,0,130,175,0x11101a,.16).setStrokeStyle(9,0x595265));for(let i=-2;i<=2;i++)this.cell.add(this.add.rectangle(i*25,0,6,165,0x272532).setStrokeStyle(2,0x777080));this.add.text(1160,575,'MATEO',{fontFamily:'monospace',fontSize:'13px',color:'#ffe8c4',backgroundColor:'#211327',padding:{x:6,y:3}}).setOrigin(.5).setDepth(20);
+    this.cell=this.add.image(1160,470,'gothic-cage').setScale(.8).setDepth(18);this.add.text(1160,575,'MATEO',{fontFamily:'monospace',fontSize:'13px',color:'#ffe8c4',backgroundColor:'#211327',padding:{x:6,y:3}}).setOrigin(.5).setDepth(20);
 
     // Attack patterns
     this.attackTimer = 0;this.bossInvulnerable=0;this.bossState='IDLE';this.stateUntil=0;this.mateoCueTimer=4200;

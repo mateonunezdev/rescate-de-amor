@@ -89,6 +89,8 @@ export class TextureFactory {
       gfx.fillStyle(0xf0c66b, 1); gfx.fillTriangle(5, 3, 8, 0, 10, 3); gfx.fillTriangle(13, 3, 16, 0, 19, 3);
       gfx.fillStyle(0xff5f9f, 1); gfx.fillRect(9, 20, 6, 5);
       gfx.generateTexture(key, 24, 40);
+    } else if (type==='assassin'||type==='guardian') {
+      const guardian=type==='guardian';gfx.fillStyle(0x16121d,.45);gfx.fillEllipse(30,68,27,5);gfx.fillStyle(guardian?0x343b50:0x35233e,1);gfx.fillRoundedRect(10,19,36,47,guardian?8:4);gfx.fillStyle(0xe2d8e5,1);gfx.fillEllipse(28,15,16,13);gfx.fillStyle(0xf6edf5,1);gfx.fillTriangle(10,25,0,10,8,45);gfx.fillTriangle(45,25,58,10,49,45);gfx.fillStyle(0x272031,1);gfx.fillCircle(34,13,2);gfx.fillStyle(0xe6ad55,1);gfx.fillTriangle(42,16,57,20,42,23);if(guardian){gfx.fillStyle(0xc7af67,1);gfx.fillRoundedRect(0,25,22,38,7);gfx.fillStyle(0x8e315f,1);gfx.fillCircle(11,44,8);gfx.fillStyle(0xd0c4b4,1);gfx.fillRect(45,20,5,47);}else{gfx.fillStyle(0x16131f,1);gfx.fillTriangle(8,25,28,2,48,25);gfx.fillStyle(0xe45d9b,1);gfx.fillRect(13,34,30,4);gfx.fillStyle(0xdad3df,1);gfx.fillTriangle(45,28,62,20,48,36);gfx.fillTriangle(8,34,-6,26,7,43);}gfx.fillStyle(0x211d29,1);gfx.fillRect(13,60,12,10);gfx.fillRect(33,60,12,10);gfx.generateTexture(key,64,72);
     } else if (['soldier','archer','knight','mage','general'].includes(type)) {
       const heavy=type==='knight'||type==='general',robe=type==='mage';
       gfx.fillStyle(0x120f19,.45);gfx.fillEllipse(25,67,21,4);
@@ -104,12 +106,12 @@ export class TextureFactory {
       if(type==='general'){gfx.fillStyle(0x9e295f,1);gfx.fillTriangle(10,29,0,66,18,58);gfx.fillStyle(0xf2c75e,1);gfx.fillTriangle(15,4,20,0,24,5);gfx.fillTriangle(24,5,29,0,34,6);}
       if(type==='mage'){gfx.fillStyle(0x3c2457,1);gfx.fillTriangle(8,21,24,0,40,21);gfx.fillStyle(0xff75d0,.8);gfx.fillCircle(23,8,3);}
       gfx.fillStyle(0x242231,1);gfx.fillRect(11,59,10,10);gfx.fillRect(27,59,10,10);gfx.fillStyle(0xc5a7c9,1);gfx.fillRect(13,59,6,3);gfx.fillRect(29,59,6,3);gfx.generateTexture(key,50,70);
-    } else if (type === 'magic' || type === 'dive') {
-      gfx.fillStyle(type === 'magic' ? 0xb879e8 : 0xd8d0e5, 1); gfx.fillEllipse(12, 11, 17, 11);
+    } else if (type === 'magic' || type === 'dive'||type==='winged') {
+      gfx.fillStyle(type === 'magic' ? 0xb879e8 : type==='winged'?0x8d789e:0xd8d0e5, 1); gfx.fillEllipse(12, 11, 17, 11);
       gfx.fillStyle(0xf5eef8, 1); gfx.fillTriangle(7, 9, 0, 2, 3, 13); gfx.fillTriangle(16, 9, 24, 2, 21, 13);
       gfx.fillStyle(0xffbd55, 1); gfx.fillTriangle(19, 9, 24, 11, 19, 13);
-      gfx.fillStyle(0x181323, 1); gfx.fillRect(15, 7, 2, 2);
-      gfx.generateTexture(key, 24, 18);
+      gfx.fillStyle(0x181323, 1); gfx.fillRect(15, 7, 2, 2);if(type==='winged'){gfx.fillStyle(0xd8cce2,1);gfx.fillTriangle(5,11,-10,-2,0,17);gfx.fillTriangle(19,11,34,-2,24,17);gfx.fillStyle(0xc55c95,1);gfx.fillTriangle(9,14,15,14,12,26);}
+      gfx.generateTexture(key,type==='winged'?36:24,type==='winged'?28:18);
     }
     
     gfx.destroy();
@@ -146,6 +148,10 @@ export class TextureFactory {
     g.fillStyle(0xc43e50,1);g.fillRect(14,32,6,5);g.fillStyle(0xe1b45a,1);g.fillRect(22,30,2,12);
     g.fillStyle(0x252a3a,1);g.fillRect(8,44,8,7);g.fillRect(20,44,8,7);g.fillStyle(0xf1f0e8,1);g.fillRect(6,50,11,2);g.fillRect(19,50,11,2);
     g.generateTexture('mateo-chibi',36,52);g.destroy();
+  }
+
+  static createGothicCageTexture(scene){
+    if(scene.textures.exists('gothic-cage'))return;const g=scene.add.graphics();g.fillStyle(0x0d0912,.62);g.fillRoundedRect(12,28,156,174,12);g.lineStyle(8,0x37293f,1);g.strokeRoundedRect(8,24,164,184,14);g.lineStyle(3,0xb86a78,1);g.strokeRoundedRect(14,30,152,172,10);g.fillStyle(0x5c294d,1);g.fillRect(4,194,172,22);g.fillStyle(0xd3a34f,1);g.fillRect(8,194,164,5);g.fillStyle(0x6f385c,1);g.fillTriangle(8,29,35,4,62,29);g.fillTriangle(58,29,90,0,122,29);g.fillTriangle(118,29,145,4,172,29);g.lineStyle(5,0xd5aa58,1);for(let x=28;x<=152;x+=31){g.lineBetween(x,31,x,196);g.fillStyle(0xf2d080,1);g.fillRect(x-2,36,3,148);}g.fillStyle(0x7d315e,1);g.fillRoundedRect(72,108,36,34,5);g.lineStyle(5,0xf0c45b,1);g.strokeCircle(90,108,13);g.fillStyle(0xf3c65f,1);g.fillRect(77,113,26,24);g.fillStyle(0x9d2f65,1);g.fillCircle(86,122,6);g.fillCircle(95,122,6);g.fillTriangle(80,124,101,124,90,137);g.fillStyle(0x2b1d31,1);for(let x=17;x<170;x+=20)g.fillRect(x,202,12,8);g.generateTexture('gothic-cage',180,220);g.destroy();
   }
 
   static createCollectibleTexture(scene, type) {

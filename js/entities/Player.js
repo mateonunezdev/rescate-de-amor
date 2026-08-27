@@ -144,7 +144,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     if (this.invulnerable > 0) return;
     this.health = Math.max(0, this.health - amount);
     this.invulnerable = 900;
-    if(this.hasFinalArt)this.setFrame(8);
+    if(this.hasFinalArt)this.setFrame(8);this.setTintFill(0xffffff);this.scene.time.delayedCall(100,()=>this.active&&this.clearTint());this.scene.particleManager?.burst(this.x,this.y,0xff6d9f,12,130);
     this.setVelocity(this.facing * -180, -220);
     this.scene.cameras.main.shake(120, 0.008);
     this.scene.audioManager?.playSfx('hit');

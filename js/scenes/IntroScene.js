@@ -1,9 +1,11 @@
+import { TextureFactory } from '../utils/TextureFactory.js?v=20260825-level-design-34';
+
 export default class IntroScene extends Phaser.Scene {
   constructor(){super('IntroScene');}
 
   create(){
     this.step=0;this.locked=false;this.birds=[];this.cameras.main.fadeIn(650,8,5,20);
-    this.makeBirdTexture();this.makePark();
+    this.makeBirdTexture();TextureFactory.createGothicCageTexture(this);this.makePark();
     this.paola=this.add.image(515,570,'paola-final',4).setScale(1.08).setDepth(20);
     this.mateo=this.add.image(665,568,'mateo-final',2).setScale(1.06).setFlipX(true).setAngle(-3).setDepth(20);
     this.tweens.add({targets:this.paola,scaleY:1.095,scaleX:1.073,duration:1150,yoyo:true,repeat:-1,ease:'Sine.easeInOut'});this.tweens.add({targets:this.mateo,scaleY:1.075,scaleX:1.045,duration:1320,yoyo:true,repeat:-1,ease:'Sine.easeInOut'});
@@ -25,9 +27,7 @@ export default class IntroScene extends Phaser.Scene {
     for(let i=0;i<26;i++){const f=this.add.circle(Math.random()*1280,350+Math.random()*270,2,0xffe477,.8).setDepth(12);this.tweens.add({targets:f,y:f.y-35,x:f.x+(Math.random()-.5)*24,alpha:.18,duration:1200+Math.random()*1100,yoyo:true,repeat:-1});}for(let i=0;i<18;i++){const p=this.add.ellipse(Math.random()*1280,120+Math.random()*430,3,7,i%2?0xff9cbd:0xffdf9d,.55).setDepth(13).setAngle(Math.random()*180);this.tweens.add({targets:p,x:p.x-70-Math.random()*80,y:p.y+35,angle:p.angle+180,duration:2600+Math.random()*2200,repeat:-1});}
   }
 
-  makeCage(){
-    const cage=this.add.container(this.mateo.x,this.mateo.y-28).setDepth(40).setAlpha(0);const glow=this.add.ellipse(0,5,205,220,0xff3fa9,.14).setStrokeStyle(5,0xff70bd,.28);const back=this.add.rectangle(0,4,142,172,0x170c20,.24).setStrokeStyle(7,0xb93d8c);const top=this.add.ellipse(0,-82,142,38,0x5a244f,.95).setStrokeStyle(7,0xf1bd62);const base=this.add.rectangle(0,87,154,20,0x6f285d).setStrokeStyle(6,0xf1bd62);const lock=this.add.container(0,24).setDepth(4);lock.add([this.add.rectangle(0,8,34,30,0x7a285c).setStrokeStyle(4,0xf4c65e),this.add.arc(0,-7,14,200,340,false,0x000000,0).setStrokeStyle(5,0xf4c65e),this.add.text(0,8,'💔',{fontSize:'16px'}).setOrigin(.5)]);this.cageBars=[];for(let i=-2;i<=2;i++){const bar=this.add.rectangle(i*27,-82,8,166,0xe7b653).setOrigin(.5,0).setStrokeStyle(2,0xffe09b);bar.scaleY=.02;this.cageBars.push(bar);}cage.add([glow,back,top,base,...this.cageBars,lock]);this.cage=cage;return cage;
-  }
+  makeCage(){const cage=this.add.container(this.mateo.x,this.mateo.y-28).setDepth(40).setAlpha(0),glow=this.add.ellipse(0,5,205,230,0xff3fa9,.14).setStrokeStyle(5,0xff70bd,.28),art=this.add.image(0,0,'gothic-cage').setScaleY(.02);this.cageBars=[art];cage.add([glow,art]);this.cage=cage;return cage;}
 
   spawnBirds(count,target=null){for(let i=0;i<count;i++){const b=this.add.image(1320+i*35,260+(i%5)*48,'intro-pigeon').setScale(1.1).setDepth(44);this.birds.push(b);if(target){const a=i/count*Math.PI*2;b.setPosition(target.x+Math.cos(a)*115,target.y+Math.sin(a)*85);this.tweens.add({targets:b,angle:360,duration:520+i*18,repeat:-1});}else this.tweens.add({targets:b,x:-70,y:b.y+(i%2?70:-30),duration:2300+i*80,ease:'Linear'});}}
   say(line,action){this.text.setAlpha(0).setText(line);action?.();this.tweens.add({targets:this.text,alpha:1,duration:220});}
@@ -43,7 +43,7 @@ export default class IntroScene extends Phaser.Scene {
   }
 
   showCastleInterior(){
-    this.step=12;this.castleLayer=this.add.container(0,0).setScrollFactor(0).setDepth(80);this.castleLayer.add(this.add.rectangle(640,360,1280,720,0x171021));for(let x=70;x<1280;x+=150)this.castleLayer.add(this.add.rectangle(x,390,90,520,0x271b34).setStrokeStyle(3,0x5b3b55));this.castleLayer.add(this.add.rectangle(640,625,1280,170,0x30233b).setStrokeStyle(7,0x76506c));this.innerMateo=this.add.image(500,530,'mateo-final',1).setScale(1.15).setScrollFactor(0).setDepth(84);this.innerVillain=this.add.image(760,490,'pecho-final',0).setScale(1.35).setScrollFactor(0).setDepth(84);this.innerBars=this.add.container(500,495).setScrollFactor(0).setDepth(85);this.innerBars.add(this.add.rectangle(0,0,165,205,0x130d19,.18).setStrokeStyle(9,0xc48a4e));for(let i=-2;i<=2;i++)this.innerBars.add(this.add.rectangle(i*31,0,8,195,0xd3a653).setStrokeStyle(2,0xffdd8b));this.cameras.main.setZoom(1).centerOn(640,360);this.text.setScrollFactor(0).setDepth(91).setText('PECHO PALOMA: “Bienvenido a mi reino.”');this.dialogPanel.setScrollFactor(0).setDepth(90);this.prompt.setScrollFactor(0).setDepth(95);this.skip.setScrollFactor(0).setDepth(96);
+    this.step=12;this.castleLayer=this.add.container(0,0).setScrollFactor(0).setDepth(80);this.castleLayer.add(this.add.rectangle(640,360,1280,720,0x171021));for(let x=70;x<1280;x+=150)this.castleLayer.add(this.add.rectangle(x,390,90,520,0x271b34).setStrokeStyle(3,0x5b3b55));this.castleLayer.add(this.add.rectangle(640,625,1280,170,0x30233b).setStrokeStyle(7,0x76506c));this.innerMateo=this.add.image(500,530,'mateo-final',1).setScale(1.15).setScrollFactor(0).setDepth(84);this.innerVillain=this.add.image(760,490,'pecho-final',0).setScale(1.35).setScrollFactor(0).setDepth(84);this.innerBars=this.add.image(500,495,'gothic-cage').setScrollFactor(0).setDepth(85);this.cameras.main.setZoom(1).centerOn(640,360);this.text.setScrollFactor(0).setDepth(91).setText('PECHO PALOMA: “Bienvenido a mi reino.”');this.dialogPanel.setScrollFactor(0).setDepth(90);this.prompt.setScrollFactor(0).setDepth(95);this.skip.setScrollFactor(0).setDepth(96);
     this.step=14;
   }
 
