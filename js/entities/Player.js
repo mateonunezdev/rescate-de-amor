@@ -142,7 +142,10 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
   takeDamage(amount = 1,source=null) {
     if(this.shieldActive>0){this.shieldImpact();return false;}
     if (this.invulnerable > 0) return;
-    if(this.scene.debugHazards&&source)console.log('PLAYER HIT BY',source.type||'hazard',source.name||source.texture?.key||'unknown',source.x,source.y);
+    const sourceType=source?.type||source?.constructor?.name||'UNKNOWN';
+    const sourceName=source?.name||source?.texture?.key||'unnamed';
+    if(this.scene.debugHazards)console.warn('DAMAGE SOURCE:',{scene:this.scene.scene?.key||'unknown',type:sourceType,name:sourceName,x:source?.x,y:source?.y,sourceVisible:source?.visible,sourceAlpha:source?.alpha,bodyEnabled:source?.body?.enable,bodyX:source?.body?.x,bodyY:source?.body?.y,bodyWidth:source?.body?.width,bodyHeight:source?.body?.height,playerX:this.x,playerY:this.y,playerBodyX:this.body?.x,playerBodyY:this.body?.y});
+    if(source&&(!source.active||source.visible===false||(source.alpha??1)<.45||(source.body&&source.body.enable===false))){if(this.scene.debugHazards)console.warn('DAMAGE BLOCKED: source was not visibly dangerous',sourceName);return false;}
     this.health = Math.max(0, this.health - amount);
     this.invulnerable = 900;
     if(this.hasFinalArt)this.setFrame(8);this.setTintFill(0xffffff);this.scene.time.delayedCall(100,()=>this.active&&this.clearTint());this.scene.particleManager?.burst(this.x,this.y,0xff6d9f,12,130);
