@@ -15,6 +15,7 @@ export default class BootScene extends Phaser.Scene {
     this.load.image('bg-garden','backgrounds/rose-garden.png?v=20260819-final-world-12');
     this.load.image('bg-castle','backgrounds/castle-interior.png?v=20260819-final-world-12');
     this.load.image('bg-boss','backgrounds/boss-tower.png?v=20260819-final-world-12');
+    this.load.image('gothic-cage','props/gothic-cage.png?v=20260826-cage-rig-35');
     this.load.on('loaderror',file=>console.error('[ASSET FINAL NO CARGADO]',file?.src||file?.key));
     this.graphics = this.add.graphics();
     this.graphics.fillStyle(0x0a0a16, 1);
@@ -36,7 +37,7 @@ export default class BootScene extends Phaser.Scene {
   }
 
   create() {
-    const required=['paola-final','mateo-final','pecho-final','pigeon-enemies-v2','bg-romantic','bg-picnic','bg-forest','bg-garden','bg-castle','bg-boss'];
+    const required=['paola-final','mateo-final','pecho-final','pigeon-enemies-v2','bg-romantic','bg-picnic','bg-forest','bg-garden','bg-castle','bg-boss','gothic-cage'];
     const missing=required.filter(key=>!this.textures.exists(key));
     if(missing.length)throw new Error(`Assets visuales obligatorios ausentes: ${missing.join(', ')}`);
     console.info('[ARTE FINAL ACTIVO]',required.map(key=>`${key}:${this.textures.get(key).frameTotal} frames`).join(' · '));

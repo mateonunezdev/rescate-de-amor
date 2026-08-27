@@ -139,9 +139,10 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
   shieldImpact(x=this.x,y=this.y){if(!this.shieldFx?.active)return;this.shieldFx.setAlpha(1.5);this.scene.tweens.add({targets:this.shieldFx,scale:1.18,alpha:1,duration:90,yoyo:true});this.scene.particleManager?.sparkles(x,y,0xffd5ed,10);this.scene.cameras.main.shake(55,.0025);this.scene.audioManager?.playSfx('bossHit');}
 
-  takeDamage(amount = 1) {
+  takeDamage(amount = 1,source=null) {
     if(this.shieldActive>0){this.shieldImpact();return false;}
     if (this.invulnerable > 0) return;
+    if(this.scene.debugHazards&&source)console.log('PLAYER HIT BY',source.type||'hazard',source.name||source.texture?.key||'unknown',source.x,source.y);
     this.health = Math.max(0, this.health - amount);
     this.invulnerable = 900;
     if(this.hasFinalArt)this.setFrame(8);this.setTintFill(0xffffff);this.scene.time.delayedCall(100,()=>this.active&&this.clearTint());this.scene.particleManager?.burst(this.x,this.y,0xff6d9f,12,130);

@@ -1,9 +1,11 @@
-import Player from '../entities/Player.js?v=20260825-level-design-34';
+import Player from '../entities/Player.js?v=20260826-cage-rig-35';
 import UIManager from '../ui/UIManager.js?v=20260823-ai-shield-polish-31';
 import AudioManager from '../systems/AudioManager.js';
 import ParticleManager from '../systems/ParticleManager.js';
 import { gameState } from '../config.js';
-import { TextureFactory } from '../utils/TextureFactory.js?v=20260825-level-design-34';
+import { TextureFactory } from '../utils/TextureFactory.js?v=20260826-cage-rig-35';
+import { createMateoCageRig } from '../utils/CageRig.js?v=20260826-cage-rig-35';
+const DEBUG_HAZARDS=false;
 
 export default class BossScene extends Phaser.Scene {
   constructor() {
@@ -11,6 +13,7 @@ export default class BossScene extends Phaser.Scene {
   }
 
   create() {
+    this.debugHazards=DEBUG_HAZARDS||new URLSearchParams(location.search).has('debugHazards');
     this.audioManager = new AudioManager(this);
     this.audioManager.playMusic('bossMusic');
     this.cameras.main.setBackgroundColor('#0a0509');
@@ -18,7 +21,7 @@ export default class BossScene extends Phaser.Scene {
     // Create textures
     TextureFactory.createPlayerTexture(this);
     TextureFactory.createBossTexture(this);
-    TextureFactory.createMateoTexture(this);TextureFactory.createGothicCageTexture(this);
+    TextureFactory.createMateoTexture(this);
     TextureFactory.createEnemyTexture(this,'pigeon');TextureFactory.createCombatTextures(this);
 
     this.createBossArena();
@@ -75,14 +78,14 @@ export default class BossScene extends Phaser.Scene {
       fontStyle: 'bold',
     }).setOrigin(0.5).setScrollFactor(0).setDepth(100);
 
-    this.mateo=this.add.image(1160,475,'mateo-final',1).setScale(.8).setDepth(12);
-    this.cell=this.add.image(1160,470,'gothic-cage').setScale(.8).setDepth(18);this.add.text(1160,575,'MATEO',{fontFamily:'monospace',fontSize:'13px',color:'#ffe8c4',backgroundColor:'#211327',padding:{x:6,y:3}}).setOrigin(.5).setDepth(20);
+    this.mateoCageRig=createMateoCageRig(this,1160,470,{frame:1,mateoScale:.8,cageScale:.62,depth:18,locked:true});this.mateo=this.mateoCageRig.mateo;this.cell=this.mateoCageRig.cage;this.add.text(1160,590,'MATEO',{fontFamily:'monospace',fontSize:'13px',color:'#ffe8c4',backgroundColor:'#211327',padding:{x:6,y:3}}).setOrigin(.5).setDepth(20);
 
     // Attack patterns
     this.attackTimer = 0;this.bossInvulnerable=0;this.bossState='IDLE';this.stateUntil=0;this.mateoCueTimer=4200;
     this.attackCooldown = 1200;
     this.bossMoving = false;
     this.projectiles = [];
+    if(this.debugHazards)this.debugGraphics=this.add.graphics().setDepth(999);
     this.physics.add.overlap(this.loveShots, this.boss, (shot) => { const damage=shot.damage||1;shot.destroy();for(let i=0;i<damage;i++){this.bossInvulnerable=0;this.handlePlayerAttack();} });
 
     // Input
@@ -256,7 +259,7 @@ export default class BossScene extends Phaser.Scene {
 
       this.projectiles.push(projectile);
     }
-    const warning=this.add.rectangle(470,555,820,8,0xffd06b,.65).setOrigin(0,.5).setDepth(70);this.tweens.add({targets:warning,alpha:.15,duration:180,yoyo:true,repeat:2,onComplete:()=>{warning.destroy();if(this.defeated)return;const beam=this.add.rectangle(470,555,820,25,0xff4fa8,.78).setOrigin(0,.5).setDepth(70);this.physics.add.existing(beam,true);const hit=this.physics.add.overlap(this.player,beam,()=>this.player.takeDamage(1));this.cameras.main.shake(160,.006);this.tweens.add({targets:beam,alpha:0,scaleY:1.8,duration:320,onComplete:()=>{hit.destroy();beam.destroy();}});}});
+    const warning=this.add.rectangle(470,555,820,8,0xffd06b,.65).setOrigin(0,.5).setDepth(70);this.tweens.add({targets:warning,alpha:.15,duration:180,yoyo:true,repeat:2,onComplete:()=>{warning.destroy();if(this.defeated)return;const beam=this.add.rectangle(470,555,820,25,0xff4fa8,.78).setName('rayo-del-ego').setOrigin(0,.5).setDepth(70);this.physics.add.existing(beam,true);const hit=this.physics.add.overlap(this.player,beam,()=>this.player.takeDamage(1,beam));this.cameras.main.shake(160,.006);this.tweens.add({targets:beam,alpha:0,scaleY:1.8,duration:320,onComplete:()=>{hit.destroy();beam.destroy();}});}});
   }
 
   attackPatternEmptyHeart(){
@@ -268,17 +271,17 @@ export default class BossScene extends Phaser.Scene {
 
   attackDive(){
     this.bossState='DASH';if(this.bossHasFinalArt)this.boss.setFrame(4);const mark=this.add.circle(this.player.x,585,55,0xff3f91,.1).setStrokeStyle(5,0xffd16f,.9).setDepth(70);
-    this.tweens.add({targets:mark,scale:1.35,alpha:.85,duration:430,yoyo:true,onComplete:()=>{mark.destroy();if(this.defeated||!this.boss?.active)return;const tx=Phaser.Math.Clamp(this.player.x,170,930),ty=460;this.tweens.add({targets:this.boss,x:tx,y:ty,duration:320,ease:'Cubic.easeIn',onUpdate:()=>{if(Phaser.Math.Distance.Between(this.boss.x,this.boss.y,this.player.x,this.player.y)<85)this.player.takeDamage(1);},onComplete:()=>this.retreatBoss()});}});
+    this.tweens.add({targets:mark,scale:1.35,alpha:.85,duration:430,yoyo:true,onComplete:()=>{mark.destroy();if(this.defeated||!this.boss?.active)return;const tx=Phaser.Math.Clamp(this.player.x,170,930),ty=460;this.tweens.add({targets:this.boss,x:tx,y:ty,duration:320,ease:'Cubic.easeIn',onUpdate:()=>{if(Phaser.Math.Distance.Between(this.boss.x,this.boss.y,this.player.x,this.player.y)<85)this.player.takeDamage(1,this.boss);},onComplete:()=>this.retreatBoss()});}});
   }
 
   attackDash(){
     this.bossState='DASH';if(this.bossHasFinalArt)this.boss.setFrame(2);const lane=Phaser.Math.Clamp(this.player.y,300,460),warning=this.add.rectangle(640,lane,1180,12,0xffd16f,.5).setDepth(70);
-    this.tweens.add({targets:warning,alpha:.1,duration:180,yoyo:true,repeat:2,onComplete:()=>{warning.destroy();if(this.defeated||!this.boss?.active)return;this.boss.setPosition(1080,lane);this.tweens.add({targets:this.boss,x:170,duration:520,ease:'Cubic.easeInOut',onUpdate:()=>{if(Phaser.Math.Distance.Between(this.boss.x,this.boss.y,this.player.x,this.player.y)<90)this.player.takeDamage(1);},onComplete:()=>this.retreatBoss()});}});
+    this.tweens.add({targets:warning,alpha:.1,duration:180,yoyo:true,repeat:2,onComplete:()=>{warning.destroy();if(this.defeated||!this.boss?.active)return;this.boss.setPosition(1080,lane);this.tweens.add({targets:this.boss,x:170,duration:520,ease:'Cubic.easeInOut',onUpdate:()=>{if(Phaser.Math.Distance.Between(this.boss.x,this.boss.y,this.player.x,this.player.y)<90)this.player.takeDamage(1,this.boss);},onComplete:()=>this.retreatBoss()});}});
   }
 
   attackMelee(){
     this.bossState='MELEE';if(this.bossHasFinalArt)this.boss.setFrame(2);const tx=Phaser.Math.Clamp(this.player.x+110,180,980),ty=Phaser.Math.Clamp(this.player.y-40,280,500);
-    this.tweens.add({targets:this.boss,x:tx,y:ty,duration:380,ease:'Sine.easeIn',onComplete:()=>{if(this.defeated)return;const fan=this.add.arc(this.boss.x-65,this.boss.y,88,120,240,false,0xff6db1,.28).setStrokeStyle(8,0xffd1e8).setDepth(72);if(Phaser.Math.Distance.Between(this.boss.x,this.boss.y,this.player.x,this.player.y)<180)this.player.takeDamage(1);this.tweens.add({targets:fan,scale:1.4,alpha:0,duration:260,onComplete:()=>fan.destroy()});this.retreatBoss();}});
+    this.tweens.add({targets:this.boss,x:tx,y:ty,duration:380,ease:'Sine.easeIn',onComplete:()=>{if(this.defeated)return;const fan=this.add.arc(this.boss.x-65,this.boss.y,88,120,240,false,0xff6db1,.28).setStrokeStyle(8,0xffd1e8).setDepth(72);if(Phaser.Math.Distance.Between(this.boss.x,this.boss.y,this.player.x,this.player.y)<180)this.player.takeDamage(1,this.boss);this.tweens.add({targets:fan,scale:1.4,alpha:0,duration:260,onComplete:()=>fan.destroy()});this.retreatBoss();}});
   }
 
   retreatBoss(){if(this.defeated||!this.boss?.active)return;this.bossState='RETREAT';this.tweens.add({targets:this.boss,x:Phaser.Math.Clamp(this.player.x+410,680,1010),y:Phaser.Math.Clamp(310+Math.random()*100,270,430),duration:520,ease:'Sine.easeOut',onComplete:()=>{if(this.boss?.active){this.bossState='IDLE';this.restoreBossVisibility();}}});}
@@ -287,7 +290,7 @@ export default class BossScene extends Phaser.Scene {
 
   onBossDamagePlayer(projectile) {
     const x=projectile.x,y=projectile.y;
-    this.player.takeDamage(1);
+    this.player.takeDamage(1,projectile);
     projectile.destroy();
     this.particleManager.burst(x, y, 0xff69b4, 10, 150);
     this.projectiles = this.projectiles.filter(p => p !== projectile);
@@ -416,6 +419,7 @@ export default class BossScene extends Phaser.Scene {
 
     // Cleanup off-screen projectiles
     this.projectiles=this.projectiles.filter(p=>{if(!p?.active)return false;if(p.x < -100||p.x>1380||p.y>820||p.y<-140){p.destroy();return false;}return true;});
+    if(this.debugGraphics){this.debugGraphics.clear().fillStyle(0xff0000,.18).lineStyle(2,0xff3030,.9);const draw=o=>{if(!o?.active||!o.body?.enable||!o.visible)return;this.debugGraphics.fillRect(o.body.x,o.body.y,o.body.width,o.body.height).strokeRect(o.body.x,o.body.y,o.body.width,o.body.height);};draw(this.boss);this.projectiles.forEach(draw);}
 
     // Player death
     if (this.player.health <= 0) {

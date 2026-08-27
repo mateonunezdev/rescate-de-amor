@@ -1,12 +1,12 @@
-import Player from '../entities/Player.js?v=20260825-level-design-34';
-import Enemy from '../entities/Enemy.js?v=20260825-level-design-34';
+import Player from '../entities/Player.js?v=20260826-cage-rig-35';
+import Enemy from '../entities/Enemy.js?v=20260826-cage-rig-35';
 import Collectible from '../entities/Collectible.js?v=20260823-master-final-30';
 import UIManager from '../ui/UIManager.js?v=20260823-ai-shield-polish-31';
 import AudioManager from '../systems/AudioManager.js';
 import ParticleManager from '../systems/ParticleManager.js';
 import SaveManager from '../systems/SaveManager.js';
 import { gameState } from '../config.js';
-import { TextureFactory } from '../utils/TextureFactory.js?v=20260825-level-design-34';
+import { TextureFactory } from '../utils/TextureFactory.js?v=20260826-cage-rig-35';
 
 const MEMORY = {
   heart: ['CORAZÓN', 'Contigo, cada latido es especial.'],
@@ -18,12 +18,13 @@ const MEMORY = {
   card2: ['CARTA II', 'Gracias por hacer mis días más bonitos.'],
   card3: ['CARTA III', 'Contigo escribo mi historia favorita.'],
 };
+const DEBUG_HAZARDS=false;
 
 export default class BaseLevelScene extends Phaser.Scene {
   constructor(key, data) { super(key); this.levelData = data; }
 
   create() {
-    this.exitCreated=false;this.finishing=false;this.paused=false;this.gameOver=false;this.cardPickupInProgress=false;
+    this.exitCreated=false;this.finishing=false;this.paused=false;this.gameOver=false;this.cardPickupInProgress=false;this.debugHazards=DEBUG_HAZARDS||new URLSearchParams(location.search).has('debugHazards');
     Object.assign(gameState, SaveManager.load());
     this.dataDef = this.levelData;
     this.audioManager = new AudioManager(this); this.audioManager.playMusic(this.dataDef.music);
@@ -44,7 +45,7 @@ export default class BaseLevelScene extends Phaser.Scene {
     this.general=this.enemies.getChildren().find(e=>e.miniBoss||e.type==='general');if(this.general){this.generalMaxHealth=this.general.health;this.generalHud=this.add.container(640,128).setScrollFactor(0).setDepth(950).setVisible(false);const gb=this.add.rectangle(0,0,410,46,0x1a1025,.94).setStrokeStyle(3,0xe4b75d);this.generalFill=this.add.rectangle(-190,12,380,10,0xc24983).setOrigin(0,.5);const gt=this.add.text(0,-9,`⚔ ${this.general.displayName||'GENERAL PALOMO'} ⚔`,{fontFamily:'monospace',fontSize:'17px',color:'#ffe6ad'}).setOrigin(.5);this.generalHud.add([gb,this.generalFill,gt]);}
     this.setupEncounterDialogues();
     this.physics.add.collider(this.enemies, this.solids);
-    this.physics.add.overlap(this.player, this.enemies, (p, e) => p.takeDamage(e.damage));
+    this.physics.add.overlap(this.player, this.enemies, (p, e) => p.takeDamage(e.damage,e));
     this.physics.add.overlap(this.projectiles,this.enemies,(shot,enemy)=>{shot.hitTargets=shot.hitTargets||new Set();if(shot.hitTargets.has(enemy))return;shot.hitTargets.add(enemy);const frontal=enemy.type==='knight'&&Math.sign(shot.x-enemy.x)!==enemy.direction;if(frontal&&!shot.piercing){shot.destroy();enemy.setTint(0xffe39a);this.time.delayedCall(90,()=>enemy.active&&enemy.clearTint());return;}const damage=Math.ceil((shot.damage||1)*(gameState.attackBoost||1));if(!shot.piercing)shot.destroy();for(let i=0;i<damage;i++)enemy.active&&enemy.hit();});
     this.makeCollectibles(); this.makeCheckpoint(); this.makeLevelPuzzle(); this.makeExit(); this.makePause(); this.makeMobileControls();this.validateDamageSources();
     this.events.on('player-hit', () => { gameState.health = this.player.health; this.refreshHud(); });
@@ -61,7 +62,7 @@ export default class BaseLevelScene extends Phaser.Scene {
   }
 
   spawnEnemyOnGround(enemy,x,intendedY){
-    if(!enemy.humanoid)return;const feetTarget=intendedY+36,candidates=[{y:648,min:0,max:this.dataDef.width}];this.dataDef.platforms.forEach(p=>{const width=p.renderWidth||Math.round(p.w*1.28);if(x>=p.x-width/2&&x<=p.x+width/2)candidates.push({y:p.y-13,min:p.x-width/2+18,max:p.x+width/2-18});});candidates.sort((a,b)=>Math.abs(a.y-feetTarget)-Math.abs(b.y-feetTarget));const surface=candidates[0];enemy.setPosition(x,surface.y-36);enemy.safeSpawn={x,y:surface.y-36};enemy.spawnX=x;enemy.minX=Math.max(enemy.minX,surface.min);enemy.maxX=Math.min(enemy.maxX,surface.max);if(enemy.minX>enemy.maxX){enemy.minX=surface.min;enemy.maxX=surface.max;}enemy.body.setAllowGravity(true);enemy.body.updateFromGameObject();
+    if(!enemy.humanoid)return;const feetTarget=intendedY+36,candidates=[{y:648,min:0,max:this.dataDef.width}];this.dataDef.platforms.forEach(p=>{const width=p.renderWidth||Math.round(p.w*1.28);if(x>=p.x-width/2&&x<=p.x+width/2)candidates.push({y:p.y-13,min:p.x-width/2+18,max:p.x+width/2-18});});candidates.sort((a,b)=>Math.abs(a.y-feetTarget)-Math.abs(b.y-feetTarget));const surface=candidates[0];enemy.setPosition(x,surface.y-36);enemy.safeSpawn={x,y:surface.y-36};enemy.spawnX=x;enemy.minX=Math.max(enemy.minX,surface.min);enemy.maxX=Math.min(enemy.maxX,surface.max);if(enemy.minX>enemy.maxX){enemy.minX=surface.min;enemy.maxX=surface.max;}enemy.patrolMinX=enemy.minX;enemy.patrolMaxX=enemy.maxX;enemy.body.setAllowGravity(true);enemy.body.updateFromGameObject();
   }
 
   spawnEnemyOnPlatform(enemy,platform){
@@ -89,7 +90,7 @@ export default class BaseLevelScene extends Phaser.Scene {
     if(this.dataDef.background)this.add.image(640,360,this.dataDef.background).setDisplaySize(1280,720).setScrollFactor(0).setDepth(-20);
     const g=this.add.graphics(); g.fillGradientStyle(this.dataDef.skyTop,this.dataDef.skyTop,this.dataDef.skyBottom,this.dataDef.skyBottom,this.dataDef.background?.08:1); g.fillRect(0,0,this.dataDef.width,720);
     if(!this.dataDef.background){for(let i=0;i<75;i++) this.add.circle(Math.random()*this.dataDef.width,30+Math.random()*300,1+Math.random()*1.4,0xfff1bd,.35+Math.random()*.55).setScrollFactor(.2);this.add.circle(980,125,64,0xffefb0,.9).setScrollFactor(.12);this.add.circle(980,125,92,0xffd581,.12).setScrollFactor(.12);}
-    this.solids=this.physics.add.staticGroup(); const ground=this.add.rectangle(this.dataDef.width/2,684,this.dataDef.width,72,this.dataDef.ground).setStrokeStyle(4,this.dataDef.trim); this.physics.add.existing(ground,true); this.solids.add(ground);
+    this.solids=this.physics.add.staticGroup(); const ground=this.add.rectangle(this.dataDef.width/2,684,this.dataDef.width,72,0x000000,0).setVisible(false); this.physics.add.existing(ground,true); this.solids.add(ground);
   }
 
   makeDecor() {
@@ -112,7 +113,7 @@ export default class BaseLevelScene extends Phaser.Scene {
     if(this.dataDef.theme==='forest'){this.add.ellipse(p.x,p.y+10,pw*.72,8,0x263b2c,.7).setDepth(7);for(let n=0;n<3;n++)this.add.line(0,0,p.x-pw*.35+n*pw*.3,p.y+2,p.x-pw*.25+n*pw*.3,p.y+21,0x5b4637,.85).setOrigin(0,0).setDepth(9);}else if(this.dataDef.theme==='garden'){for(let n=0;n<3;n++)this.add.arc(p.x-pw*.3+n*pw*.3,p.y+6,11,40,300,false,0x397047,.7).setDepth(9);}else{for(let n=0;n<Math.floor(pw/42);n++)this.add.rectangle(p.x-pw/2+22+n*42,p.y+7,36,2,0x75627d,.55).setDepth(9);}
   });}
 
-  makeHazards(){const layouts={forest:[620,880,1160,1430,1690,1970,2240,2500,2760,3220],garden:[580,830,1090,1350,1610,1880,2140,2400,2670,2930,3190,3450,3840],castle:[570,820,1080,1330,1590,1850,2110,2370,2630,2890,3150,3410,3670,3900,4310]},styles={forest:['hazard-root','hazard-thorns','hazard-puddle'],garden:['hazard-thorns','hazard-water','hazard-root'],castle:['hazard-flame','hazard-blade','hazard-magic']};this.hazards=[];(layouts[this.dataDef.theme]||[]).forEach((x,i)=>{const key=styles[this.dataDef.theme][i%3],h=this.add.image(x,642,key).setDepth(12).setScale(key==='hazard-blade'?.78:1.08);this.physics.add.existing(h,true);h.body.setSize(Math.min(42,h.width-8),Math.min(18,h.height-6));h.phase=i*430;h.warning=this.add.ellipse(x,646,74,24,this.dataDef.accent,.08).setStrokeStyle(2,this.dataDef.accent,.65).setDepth(11);this.hazards.push(h);this.physics.add.overlap(this.player,h,()=>{if(h.dangerous)this.player.takeDamage(1);});});}
+  makeHazards(){const layouts={forest:[620,880,1160,1430,1690,1970,2240,2500,2760,3220],garden:[580,830,1090,1350,1610,1880,2140,2400,2670,2930,3190,3450,3840],castle:[570,820,1080,1330,1590,1850,2110,2370,2630,2890,3150,3410,3670,3900,4310]},styles={forest:['hazard-root','hazard-thorns','hazard-puddle'],garden:['hazard-thorns','hazard-water','hazard-root'],castle:['hazard-flame','hazard-blade','hazard-magic']};this.hazards=[];(layouts[this.dataDef.theme]||[]).forEach((x,i)=>{const key=styles[this.dataDef.theme][i%3],h=this.add.image(x,642,key).setName(key).setDepth(12).setScale(key==='hazard-blade'?.78:1.08);this.physics.add.existing(h,true);h.body.setSize(Math.min(42,h.width-8),Math.min(18,h.height-6));h.phase=i*430;h.warning=this.add.ellipse(x,646,74,24,this.dataDef.accent,.08).setStrokeStyle(2,this.dataDef.accent,.65).setDepth(11);this.hazards.push(h);this.physics.add.overlap(this.player,h,()=>{if(h.dangerous)this.player.takeDamage(1,h);});});}
 
   makePuzzleDoor(x,label){const door=this.add.container(x,430).setDepth(25),slab=this.add.rectangle(0,0,92,420,this.dataDef.theme==='forest'?0x413a38:this.dataDef.theme==='garden'?0x776a70:0x292431).setStrokeStyle(7,this.dataDef.trim),arch=this.add.arc(0,-190,48,180,360,false,this.dataDef.theme==='castle'?0x46394d:0x685b58).setStrokeStyle(6,this.dataDef.trim),rune=this.add.text(0,-30,this.dataDef.theme==='forest'?'♥':this.dataDef.theme==='garden'?'🌹':'ᚱ',{fontFamily:'monospace',fontSize:'40px',color:'#ff91c4'}).setOrigin(.5),name=this.add.text(0,118,label,{fontFamily:'monospace',fontSize:'12px',color:'#ffe8c2',align:'center'}).setOrigin(.5),blocker=this.add.rectangle(x,430,92,420,0x000000,0);door.add([slab,arch,rune,name]);this.physics.add.existing(blocker,true);this.solids.add(blocker);door.blocker=blocker;door.rune=rune;return door;}
 
@@ -128,7 +129,7 @@ export default class BaseLevelScene extends Phaser.Scene {
 
   onRuneGuardianDefeated(enemy){if(this.scene.key!=='Level3Scene'||!enemy.runeGuardian||enemy.runeAwarded)return;enemy.runeAwarded=true;this.runesCollected=Math.min(3,(this.runesCollected||0)+1);const slot=this.runeSlots?.[this.runesCollected-1];slot?.setText('ᚱ').setColor('#ffd078');this.particleManager.burst(enemy.x,enemy.y,0xd87bff,22,200);this.uiManager.showDialogueBubble('PAOLA',`Runa recuperada · ${this.runesCollected}/3`,{x:640,y:430,duration:1400,width:460});if(this.runesCollected===3)this.openPuzzleDoor('Las tres runas responden. La puerta está abierta.');}
 
-  validateDamageSources(){const bad=[];(this.hazards||[]).forEach((h,i)=>{if(!h.visible||!h.texture?.key||!h.warning?.visible)bad.push(`hazard-${i}`);});this.enemies?.getChildren().forEach((e,i)=>{if(e.damage>0&&(!e.visible||!e.texture?.key))bad.push(`enemy-${i}`);});if(bad.length)console.error(`[QA ${this.scene.key}] Damage hitboxes sin representación visible`,bad);else console.info(`[QA ${this.scene.key}] CERO damage hitboxes invisibles`);const debug=new URLSearchParams(location.search).has('debugHazards');if(debug){(this.hazards||[]).forEach(h=>{const box=this.add.rectangle(h.x,h.y,h.body.width,h.body.height,0xff0000,.25).setStrokeStyle(2,0xff4040).setDepth(200);this.tweens.add({targets:box,alpha:.08,duration:350,yoyo:true,repeat:-1});});}}
+  validateDamageSources(){const bad=[];(this.hazards||[]).forEach((h,i)=>{if(!h.visible||!h.texture?.key||!h.warning?.visible)bad.push(`hazard-${i}`);});this.enemies?.getChildren().forEach((e,i)=>{if(e.damage>0&&(!e.visible||!e.texture?.key))bad.push(`enemy-${i}`);});if(bad.length)console.error(`[QA ${this.scene.key}] Damage hitboxes sin representación visible`,bad);else console.info(`[QA ${this.scene.key}] CERO damage hitboxes invisibles`);if(this.debugHazards){(this.hazards||[]).forEach(h=>{const box=this.add.rectangle(h.x,h.y,h.body.width,h.body.height,0xff0000,.25).setStrokeStyle(2,0xff4040).setDepth(200);this.tweens.add({targets:box,alpha:.08,duration:350,yoyo:true,repeat:-1});});this.enemies?.getChildren().forEach(e=>this.add.rectangle(e.x,e.y,e.body.width,e.body.height,0xff0000,.18).setStrokeStyle(2,0xff4040).setDepth(200));}}
 
   validateRoute(){const gravity=900,jump=450,run=350,maxRise=jump*jump/(2*gravity),route=[{x:100,y:648,w:20},...this.dataDef.platforms];const report=[];for(let i=1;i<route.length;i++){const a=route[i-1],b=route[i],verticalGap=Math.max(0,a.y-b.y),horizontalGap=Math.max(0,Math.abs(b.x-a.x)-(a.w+b.w)/2);const disc=jump*jump-2*gravity*verticalGap;const flight=disc>=0?(jump+Math.sqrt(disc))/gravity:0;const maxHorizontal=run*flight;report.push({jump:i,verticalGap,horizontalGap,maxHorizontal:Math.round(maxHorizontal),valid:verticalGap<=maxRise-8&&horizontalGap<=maxHorizontal*.88});}const invalid=report.filter(x=>!x.valid);console.table(report);if(invalid.length)console.error(`[QA ${this.scene.key}] Saltos fuera de rango`,invalid);else console.info(`[QA ${this.scene.key}] Ruta principal validada: ${report.length} saltos`);}
 

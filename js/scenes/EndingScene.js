@@ -1,8 +1,9 @@
 import { FINAL_LETTER } from '../data/finalLetter.js?v=20260821-picnic-letter-25';
-import { TextureFactory } from '../utils/TextureFactory.js?v=20260825-level-design-34';
+import { TextureFactory } from '../utils/TextureFactory.js?v=20260826-cage-rig-35';
 import AudioManager from '../systems/AudioManager.js';
 import { gameState } from '../config.js';
 import UIManager from '../ui/UIManager.js?v=20260823-professional-polish-29';
+import { createMateoCageRig } from '../utils/CageRig.js?v=20260826-cage-rig-35';
 
 export default class EndingScene extends Phaser.Scene {
   constructor(){super('EndingScene');}
@@ -10,7 +11,7 @@ export default class EndingScene extends Phaser.Scene {
   create(){
     this.audioManager=new AudioManager(this);this.audioManager.playMusic('endingMusic');
     this.uiManager=new UIManager(this,{hud:false});
-    TextureFactory.createPlayerTexture(this);TextureFactory.createMateoTexture(this);TextureFactory.createGothicCageTexture(this);
+    TextureFactory.createPlayerTexture(this);TextureFactory.createMateoTexture(this);
     this.cameras.main.fadeIn(650,12,6,22);this.makeBackdrop();if(this.letterOnly){this.rescueOverlay={destroy(){}};this.showLetter();}else this.makeRescue();
     const collected=gameState.memories||[],cards=['card1','card2','card3'];gameState.finalLetterUnlocked=cards.every(c=>collected.includes(c));gameState.secretUnlocked=collected.filter(x=>!cards.includes(x)).length>=5;gameState.achievements=[...new Set([...(gameState.achievements||[]),'Nuestra historia','Amor verdadero'])];
   }
@@ -19,16 +20,15 @@ export default class EndingScene extends Phaser.Scene {
     const finalMateo=true;
     this.villain=this.add.image(1080,535,'pecho-final',7).setScale(.88).setDepth(7);
     this.time.delayedCall(100,()=>this.assertUniqueCinematicCharacters());
-    this.paola=this.add.image(390,555,'paola-final',9).setScale(.9).setDepth(10);this.mateo=this.add.image(880,555,'mateo-final',1).setScale(.88).setDepth(8);
-    this.bars=this.add.image(880,510,'gothic-cage').setScale(.82).setDepth(12);
+    this.paola=this.add.image(390,555,'paola-final',9).setScale(.9).setDepth(10);this.mateoCageRig=createMateoCageRig(this,880,510,{frame:1,mateoScale:.88,cageScale:.68,depth:12,locked:true});this.mateo=this.mateoCageRig.mateo;this.bars=this.mateoCageRig.cage;
     const crown=this.add.text(1080,585,'♛',{fontSize:'42px',color:'#e5bb5d'}).setAngle(28).setOrigin(.5);this.add.text(1080,630,'PECHO PALOMA: “No... no puede ser.”',{fontFamily:'monospace',fontSize:'14px',color:'#df9abc'}).setOrigin(.5);
     this.dialog=this.add.text(640,115,'PAOLA: “El amor no se roba.”',{fontFamily:'monospace',fontSize:'25px',color:'#fff0d2',align:'center',stroke:'#32172f',strokeThickness:5}).setOrigin(.5);
-    this.time.delayedCall(1100,()=>{this.tweens.add({targets:this.bars,y:300,alpha:0,duration:900,ease:'Cubic.easeIn'});this.dialog.setText('La celda se abre...');for(let i=0;i<7;i++){const bird=this.add.text(830+i*28,390+(i%2)*30,'🕊',{fontSize:'22px'});this.tweens.add({targets:bird,x:1350,y:100-i*15,alpha:0,duration:1500+i*90,onComplete:()=>bird.destroy()});}});
-    this.time.delayedCall(2300,()=>{this.dialog.setText('MATEO: “Sabía que vendrías.”');if(finalMateo)this.mateo.setFrame(2);this.tweens.add({targets:this.mateo,x:670,duration:1000,ease:'Sine.easeInOut'});});
+    this.time.delayedCall(1100,()=>{this.mateoCageRig.lock.setColor('#ffffff');this.tweens.add({targets:this.mateoCageRig.lock,scale:2.2,alpha:0,duration:420,onComplete:()=>this.mateoCageRig.setLocked(false)});this.tweens.add({targets:this.bars,x:95,alpha:.28,duration:900,ease:'Cubic.easeOut'});this.dialog.setText('La celda se abre...');for(let i=0;i<7;i++){const bird=this.add.text(830+i*28,390+(i%2)*30,'🕊',{fontSize:'22px'});this.tweens.add({targets:bird,x:1350,y:100-i*15,alpha:0,duration:1500+i*90,onComplete:()=>bird.destroy()});}});
+    this.time.delayedCall(2300,()=>{this.dialog.setText('MATEO: “Sabía que vendrías.”');const world=this.mateoCageRig.getWorldTransformMatrix();this.mateoCageRig.remove(this.mateo);this.add.existing(this.mateo);this.mateo.setPosition(world.tx,world.ty+24).setDepth(13);if(finalMateo)this.mateo.setFrame(2);this.tweens.add({targets:this.mateo,x:670,duration:1000,ease:'Sine.easeInOut'});});
     this.time.delayedCall(3500,()=>{this.dialog.setText('PAOLA: “Siempre.”');this.tweens.add({targets:this.paola,x:590,duration:700,ease:'Sine.easeInOut'});});
     this.time.delayedCall(4300,()=>{this.dialog.setText('Por nosotros.');this.paola.setFlipX(false).setFrame(8).setX(605);this.mateo.setFlipX(true).setX(670);if(finalMateo)this.mateo.setFrame(3);for(let i=0;i<22;i++){const h=this.add.text(630+(Math.random()-.5)*150,500+Math.random()*80,Math.random()>.4?'♥':'🌹',{fontSize:`${14+Math.random()*18}px`,color:'#ff6fa8'}).setOrigin(.5).setDepth(20);this.tweens.add({targets:h,y:h.y-180,x:h.x+(Math.random()-.5)*80,alpha:0,duration:1300+Math.random()*800,onComplete:()=>h.destroy()});}this.assertUniqueCinematicCharacters();this.time.delayedCall(1300,()=>this.showEnvelope());});
   }
-  countVisibleCharacter(textureKey){return this.children.list.filter(o=>o.visible&&o.texture?.key===textureKey).length;}
+  countVisibleCharacter(textureKey){let count=0;const visit=o=>{if(o.visible&&o.texture?.key===textureKey)count++;o.list?.forEach(visit);};this.children.list.forEach(visit);return count;}
   assertUniqueCinematicCharacters(){const expected=[['paola-final','Paola'],['mateo-final','Mateo']];expected.forEach(([key,name])=>{const count=this.countVisibleCharacter(key);if(count!==1)console.error(`[ENDING QA] ${name}: se esperaba 1 sprite visible y hay ${count}`);});}
   showEnvelope(){
     this.rescueOverlay=this.add.container(0,0).setDepth(100);

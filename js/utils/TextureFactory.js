@@ -150,10 +150,6 @@ export class TextureFactory {
     g.generateTexture('mateo-chibi',36,52);g.destroy();
   }
 
-  static createGothicCageTexture(scene){
-    if(scene.textures.exists('gothic-cage'))return;const g=scene.add.graphics();g.fillStyle(0x0d0912,.62);g.fillRoundedRect(12,28,156,174,12);g.lineStyle(8,0x37293f,1);g.strokeRoundedRect(8,24,164,184,14);g.lineStyle(3,0xb86a78,1);g.strokeRoundedRect(14,30,152,172,10);g.fillStyle(0x5c294d,1);g.fillRect(4,194,172,22);g.fillStyle(0xd3a34f,1);g.fillRect(8,194,164,5);g.fillStyle(0x6f385c,1);g.fillTriangle(8,29,35,4,62,29);g.fillTriangle(58,29,90,0,122,29);g.fillTriangle(118,29,145,4,172,29);g.lineStyle(5,0xd5aa58,1);for(let x=28;x<=152;x+=31){g.lineBetween(x,31,x,196);g.fillStyle(0xf2d080,1);g.fillRect(x-2,36,3,148);}g.fillStyle(0x7d315e,1);g.fillRoundedRect(72,108,36,34,5);g.lineStyle(5,0xf0c45b,1);g.strokeCircle(90,108,13);g.fillStyle(0xf3c65f,1);g.fillRect(77,113,26,24);g.fillStyle(0x9d2f65,1);g.fillCircle(86,122,6);g.fillCircle(95,122,6);g.fillTriangle(80,124,101,124,90,137);g.fillStyle(0x2b1d31,1);for(let x=17;x<170;x+=20)g.fillRect(x,202,12,8);g.generateTexture('gothic-cage',180,220);g.destroy();
-  }
-
   static createCollectibleTexture(scene, type) {
     const key = `collectible-${type}`;
     if (scene.textures.exists(key)) return;
