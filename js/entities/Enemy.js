@@ -31,7 +31,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
 
   update(delta=16) {
     if (!this.active || !this.body) return;
-    const player=this.scene.player,dist=player?player.x-this.x:9999,verticalDist=player?player.y-this.y:9999,absDist=Math.hypot(dist,verticalDist);this.attackCooldown=Math.max(0,this.attackCooldown-delta);
+    const player=this.scene.player,dist=player?player.x-this.x:9999,absDist=Math.abs(dist);this.attackCooldown=Math.max(0,this.attackCooldown-delta);
     if(this.humanoid&&player){const ranged=this.type==='archer'||this.type==='mage',detect=this.type==='general'?520:350,idealMin=this.type==='mage'?250:this.type==='archer'?220:60,idealMax=this.type==='mage'?400:this.type==='archer'?350:idealMin;if(absDist<detect){this.direction=Math.sign(dist)||this.direction;if(ranged){this.body.setVelocityX(absDist<idealMin?-this.direction*this.speed*.7:absDist>idealMax?this.direction*this.speed*.75:0);this.rangedCooldown-=delta;if(this.rangedCooldown<=0){this.rangedCooldown=this.type==='mage'?1900:1450;this.rangedAttack(player);}}else if(absDist>65)this.body.setVelocityX(this.speed*this.direction*(this.type==='general'?1.65:this.type==='assassin'?1.9:(this.type==='knight'||this.type==='guardian')?0.82:1.25));else{this.body.setVelocityX(0);if(this.attackCooldown<=0){this.attackCooldown=this.type==='general'?700:this.type==='assassin'?520:950;this.meleeStrike(player);}}}else{const home=this.spawnX-this.x;if(Math.abs(home)>18){this.direction=Math.sign(home);this.body.setVelocityX(this.speed*.55*this.direction);}else this.body.setVelocityX(0);}}else this.body.setVelocityX(this.speed*this.direction);
     if(this.humanoid&&this.body.velocity.x!==0){const ahead=this.x+Math.sign(this.body.velocity.x)*24;if(ahead<=this.minX||ahead>=this.maxX){this.direction*=-1;this.body.setVelocityX(Math.abs(this.body.velocity.x)*this.direction);}}
     if (this.x < this.minX) {
@@ -54,7 +54,6 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.health -= 1;
     this.inAction=true;if(this.hasEnemySheet)this.setFrame(this.spriteRow*6+4);
     this.scene.audioManager?.playSfx('enemyDown');
-    this.scene.cameras?.main?.flash(34,255,205,230,false);
     this.setTintFill(0xffffff);
     this.scene.cameras.main.shake(45,.0025);this.scene.particleManager?.sparkles(this.x,this.y,0xff8fc8,6);this.scene.tweens.add({targets:this,x:this.x-this.direction*9,duration:55,yoyo:true});
     this.scene.time.delayedCall(120, () => {if(this.active){this.clearTint();this.inAction=false;}});

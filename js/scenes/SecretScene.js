@@ -5,13 +5,11 @@ export default class SecretScene extends Phaser.Scene {
   constructor(){super('SecretScene');}
 
   create(){
-    const fragments=(gameState.memories||[]).filter(x=>/^fragment\d+$/.test(x)).length;if(fragments!==12){this.scene.start('MenuScene');return;}
     this.audioManager=new AudioManager(this);this.audioManager.playMusic('endingMusic');this.cameras.main.fadeIn(900,8,3,15);this.cameras.main.setBackgroundColor('#08040f');
     this.add.image(640,360,'bg-romantic').setDisplaySize(1280,720).setTint(0x8a3a68).setDepth(-20);this.add.rectangle(640,360,1280,720,0x120719,.68).setDepth(-19);
-    const prompt=this.add.text(640,250,'12 / 12 FRAGMENTOS\n\nUNA ROSA ESPERA POR TI',{fontFamily:'monospace',fontSize:'27px',color:'#ffe9c6',align:'center',lineSpacing:8}).setOrigin(.5),rose=this.add.image(640,440,'collectible-rose').setScale(4).setInteractive({useHandCursor:true});this.tweens.add({targets:rose,scale:4.5,alpha:.72,duration:700,yoyo:true,repeat:-1});rose.once('pointerdown',()=>{prompt.destroy();rose.destroy();this.revealSecret();});
+    this.makeLoveWall();this.makeFallingLove();this.makeCouple();this.makeCenterMessage();this.time.delayedCall(6500,()=>this.makeButtons());
     gameState.secretUnlocked=true;gameState.currentScene='SecretScene';localStorage.setItem('rescate-de-amor-save',JSON.stringify(gameState));
   }
-  revealSecret(){this.makeLoveWall();this.makeFallingLove();this.makeCouple();this.makeCenterMessage();this.add.text(640,405,'“Esta historia todavía se está escribiendo.”\n\nCAPÍTULO II · NUESTRO FUTURO ❤️\n\nCONTINUARÁ...',{fontFamily:'monospace',fontSize:'22px',color:'#ffe9cf',align:'center',lineSpacing:8,stroke:'#4a173b',strokeThickness:5}).setOrigin(.5).setDepth(34).setAlpha(0).setName('secret-copy');this.tweens.add({targets:this.children.getByName('secret-copy'),alpha:1,duration:900,delay:3300});this.time.delayedCall(6500,()=>this.makeButtons());}
 
   makeLoveWall(){
     const colors=['#ff8fbd','#ffd0df','#f3b4ff','#ffd98c','#ffffff'];this.loveTexts=[];

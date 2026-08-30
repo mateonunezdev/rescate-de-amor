@@ -201,8 +201,6 @@ export class TextureFactory {
       gfx.generateTexture(key, 20, 20);
     } else if (type.startsWith('card')) {
       gfx.fillStyle(0x8f315f,.35);gfx.fillRoundedRect(1,3,30,23,3);gfx.fillStyle(0xffedcf,1);gfx.fillRoundedRect(3,1,26,22,3);gfx.lineStyle(2,0xd25b84,1);gfx.strokeRoundedRect(3,1,26,22,3);gfx.fillStyle(0xd63f76,1);gfx.fillCircle(13,10,4);gfx.fillCircle(19,10,4);gfx.fillTriangle(9,11,23,11,16,19);gfx.fillStyle(0xf0b85a,1);gfx.fillRect(7,4,18,2);gfx.generateTexture(key,32,28);
-    } else if(type.startsWith('fragment')){
-      gfx.fillStyle(0x6d2f86,.32);gfx.fillCircle(14,14,13);gfx.lineStyle(2,0xffb8e4,.85);gfx.strokeCircle(14,14,11);gfx.fillStyle(0x9ee8ff,1);gfx.fillTriangle(14,1,25,11,17,26);gfx.fillTriangle(14,1,4,12,17,26);gfx.fillStyle(0xffffff,.82);gfx.fillTriangle(14,3,17,12,11,12);gfx.fillStyle(0xff82c4,.7);gfx.fillTriangle(5,13,14,15,16,25);gfx.generateTexture(key,28,28);
     }
     
     gfx.destroy();

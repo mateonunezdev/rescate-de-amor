@@ -1,4 +1,4 @@
-import Player from '../entities/Player.js?v=20260829-definitive-48';
+import Player from '../entities/Player.js?v=20260826-cage-rig-35';
 import UIManager from '../ui/UIManager.js?v=20260823-ai-shield-polish-31';
 import AudioManager from '../systems/AudioManager.js';
 import ParticleManager from '../systems/ParticleManager.js';
@@ -64,8 +64,8 @@ export default class BossScene extends Phaser.Scene {
     // UI & Audio
     this.uiManager = new UIManager(this);
     this.particleManager = new ParticleManager(this);
-    this.uiManager.updateHud({health:this.player.health,roses:gameState.roses||0,cards:(gameState.memories||[]).filter(x=>/^card[123]$/.test(x)).length,fragments:(gameState.memories||[]).filter(x=>/^fragment\d+$/.test(x)).length,power:this.player.canChargeLove?'corazón imparable':'impulso de amor'});
-    this.events.on('player-hit',health=>this.uiManager.updateHud({health,roses:gameState.roses||0,cards:(gameState.memories||[]).filter(x=>/^card[123]$/.test(x)).length,fragments:(gameState.memories||[]).filter(x=>/^fragment\d+$/.test(x)).length,power:this.player.canChargeLove?'corazón imparable':'impulso de amor'}));
+    this.uiManager.updateHud({health:this.player.health,roses:gameState.roses||0,cards:(gameState.memories||[]).filter(x=>/^card[123]$/.test(x)).length,power:this.player.canChargeLove?'corazón imparable':'impulso de amor'});
+    this.events.on('player-hit',health=>this.uiManager.updateHud({health,roses:gameState.roses||0,cards:(gameState.memories||[]).filter(x=>/^card[123]$/.test(x)).length,power:this.player.canChargeLove?'corazón imparable':'impulso de amor'}));
 
     // Boss health bar
     this.createHealthBar();
@@ -93,11 +93,8 @@ export default class BossScene extends Phaser.Scene {
     this.keys = this.input.keyboard.addKeys('A,D,SPACE,X');
     this.add.text(640,655,'X — IMPULSO DE AMOR',{fontFamily:'monospace',fontSize:'18px',color:'#fff0c4',backgroundColor:'#682453',padding:{x:14,y:8}}).setOrigin(.5).setDepth(110).setAlpha(.95);
     this.showBossIntro();
-    this.makeBossMobileControls();
 
   }
-
-  makeBossMobileControls(){if(!this.sys.game.device.input.touch)return;this.input.addPointer(5);const bind=(label,x,key)=>{const b=this.add.text(x,640,label,{fontFamily:'monospace',fontSize:'28px',color:'#fff',backgroundColor:'#55294f',padding:{x:14,y:11}}).setOrigin(.5).setDepth(1300).setAlpha(.82).setInteractive();const down=()=>{key.isDown=true;key._justDown=true;b.setAlpha(1);},up=()=>{key.isDown=false;key._justUp=true;b.setAlpha(.82);};b.on('pointerdown',down).on('pointerup',up).on('pointerout',up).on('pointerupoutside',up);};bind('◀',70,this.player.keys.A);bind('▶',150,this.player.keys.D);bind('↑',1010,this.player.keys.SPACE);bind('♥',1100,this.player.keys.X);bind('⚔',1190,this.player.keys.Z);bind('➜',1240,this.player.keys.Q);}
 
   showBossIntro(){
     this.combatStarted=false;
@@ -372,7 +369,7 @@ export default class BossScene extends Phaser.Scene {
     gameState.bossDefeated = true;
     gameState.unlockedLevel = 5;
     gameState.currentScene = 'EndingScene';
-    gameState.achievements = [...new Set([...(gameState.achievements || []), 'Reina derrotada', 'SIN MIEDO'])];
+    gameState.achievements = [...new Set([...(gameState.achievements || []), 'Reina derrotada', 'Sin miedo a las palomas'])];
     localStorage.setItem('rescate-de-amor-save', JSON.stringify(gameState));
     this.time.delayedCall(5200,()=>this.uiManager.showDialogueBubble('PAOLA','Entonces abre la jaula.',{x:380,y:430,duration:2100,width:460}));
     this.time.delayedCall(5700,()=>{this.cell?.setAlpha(.35);this.uiManager.showMessage('El candado pierde su magia. Pecho Paloma lo deja libre.','#ffe9b0',1900);});
