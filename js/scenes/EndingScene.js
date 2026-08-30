@@ -2,7 +2,7 @@ import { FINAL_LETTER } from '../data/finalLetter.js?v=20260821-picnic-letter-25
 import { TextureFactory } from '../utils/TextureFactory.js?v=20260826-cage-rig-35';
 import AudioManager from '../systems/AudioManager.js';
 import { gameState } from '../config.js';
-import UIManager from '../ui/UIManager.js?v=20260823-professional-polish-29';
+import UIManager from '../ui/UIManager.js?v=20260830-intro-level1-02';
 import { createMateoCageRig } from '../utils/CageRig.js?v=20260826-cage-rig-35';
 import Player from '../entities/Player.js?v=20260829-definitive-polish-01';
 

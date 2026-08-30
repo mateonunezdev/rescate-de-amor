@@ -13,6 +13,7 @@ export default class UIManager {
   createHud() {
     this.container = this.scene.add.container(24, 18).setScrollFactor(0).setDepth(1000);
     this.container.setName('player-hud');
+    this.container.setScale(this.scene.scale.width<900 ? .78 : .88);
 
     const bg = this.scene.add.rectangle(0, 0, 370, 112, 0x160d24, 0.96).setStrokeStyle(3, 0xf2c46f, 0.9);
     bg.setOrigin(0, 0);
@@ -60,21 +61,27 @@ export default class UIManager {
   }
 
   showDialogueBubble(speaker, text, options = {}) {
-    const x = options.x ?? this.scene.scale.width / 2;
-    const y = options.y ?? 485;
-    const width = options.width ?? 610;
-    const duration = options.duration ?? 2500;
-    const layer = this.scene.add.container(x, y).setScrollFactor(0).setDepth(1120).setAlpha(0);
-    const shadow = this.scene.add.rectangle(5, 6, width, 104, 0x08050d, .35).setOrigin(.5);
-    const panel = this.scene.add.rectangle(0, 0, width, 104, 0xfff0d8, .98).setStrokeStyle(5, 0x422039, 1);
-    const tailX = options.tail === 'right' ? width / 2 - 54 : -width / 2 + 54;
-    const tail = this.scene.add.triangle(tailX, 66, -18, -18, 22, -18, options.tail === 'right' ? 18 : -18, 22, 0xfff0d8).setStrokeStyle(4, 0x422039, 1);
-    const name = this.scene.add.text(-width / 2 + 22, -37, String(speaker).toUpperCase(), { fontFamily: 'monospace', fontSize: '16px', color: options.nameColor ?? '#b02f68', fontStyle: 'bold' });
-    const line = this.scene.add.text(-width / 2 + 22, -10, text, { fontFamily: 'monospace', fontSize: '18px', color: '#3d2030', wordWrap: { width: width - 44 }, lineSpacing: 4 });
-    layer.add([shadow, tail, panel, name, line]);
-    this.scene.tweens.add({ targets: layer, alpha: 1, y: y - 8, duration: 180, ease: 'Back.easeOut' });
-    const close = () => { if (!layer.active) return; this.scene.tweens.add({ targets: layer, alpha: 0, y: layer.y - 12, duration: 220, onComplete: () => layer.destroy() }); };
-    this.scene.time.delayedCall(duration, close);
-    return layer;
+    if(options.replace!==false)this.activeDialogue?.dismiss?.(true);
+    const villain=options.variant==='pecho'||String(speaker).toUpperCase().includes('PECHO'),love=options.variant==='love'||['PAOLA','MATEO'].includes(String(speaker).toUpperCase()),thought=options.variant==='thought';
+    const viewportW=this.scene.scale.width,viewportH=this.scene.scale.height,maxW=Math.min(options.width??520,viewportW*(viewportW<800?.62:.43)),minW=Math.min(210,maxW),fontSize=viewportW<800?16:18;
+    const estimated=Math.max(minW,Math.min(maxW,Math.sqrt(String(text).length)*48));
+    const line=this.scene.add.text(0,0,'',{fontFamily:'monospace',fontSize:`${fontSize}px`,color:villain?'#fff1dc':'#38202b',wordWrap:{width:estimated-34},lineSpacing:4}).setOrigin(0,0);
+    line.setText(text);const width=Math.ceil(Math.max(minW,line.width+34)/4)*4,height=Math.ceil(Math.max(76,line.height+50)/4)*4;line.setPosition(-width/2+17,-height/2+31);
+    let x=options.x??viewportW/2,y=options.y??viewportH*.67;x=Phaser.Math.Clamp(x,width/2+12,viewportW-width/2-12);y=Phaser.Math.Clamp(y,height/2+18,viewportH-height/2-42);
+    const tailRight=options.tail==='right'||(!options.tail&&x>viewportW/2),tailX=tailRight?width/2-42:-width/2+42,bg=villain?0x28122f:0xfff1d8,border=villain?0xdb4f9f:0x3a222e,accent=villain?0xf1bf67:String(speaker).toUpperCase()==='MATEO'?0x315d91:0xa92f67;
+    const layer=this.scene.add.container(x,y).setScrollFactor(0).setDepth(options.depth??1120).setAlpha(0).setScale(.92),g=this.scene.add.graphics();
+    const pixelBox=(ox,oy,w,h,fill,stroke)=>{g.fillStyle(0x09050d,.32).fillRect(ox+6,oy+7,w,h);g.fillStyle(stroke,1).fillRect(ox+4,oy,w-8,h).fillRect(ox,oy+4,w,h-8);g.fillStyle(fill,1).fillRect(ox+8,oy+4,w-16,h-8).fillRect(ox+4,oy+8,w-8,h-16);};pixelBox(-width/2,-height/2,width,height,bg,border);
+    g.fillStyle(border,1);if(tailRight){g.fillRect(tailX-4,height/2-4,28,8);g.fillRect(tailX+4,height/2+4,20,8);g.fillRect(tailX+12,height/2+12,12,8);}else{g.fillRect(tailX-24,height/2-4,28,8);g.fillRect(tailX-24,height/2+4,20,8);g.fillRect(tailX-24,height/2+12,12,8);}g.fillStyle(bg,1);g.fillRect(tailRight?tailX:tailX-20,height/2-4,20,8);g.fillRect(tailRight?tailX+8:tailX-20,height/2+4,12,8);
+    const labelW=Math.min(width-24,Math.max(92,String(speaker).length*11+24)),label=this.scene.add.graphics();label.fillStyle(border,1).fillRect(-width/2+10,-height/2-13,labelW,25);label.fillStyle(accent,1).fillRect(-width/2+14,-height/2-9,labelW-8,17);
+    const name=this.scene.add.text(-width/2+20,-height/2-7,String(speaker).toUpperCase(),{fontFamily:'monospace',fontSize:'13px',color:'#fff8e8',fontStyle:'bold'}),heart=love?this.scene.add.text(width/2-23,-height/2+12,'♥',{fontFamily:'monospace',fontSize:'15px',color:'#c53c72'}).setOrigin(.5):null;
+    if(thought){for(let i=0;i<3;i++)g.fillStyle(bg,1).fillCircle(tailRight?tailX+20+i*9:tailX-20-i*9,height/2+12+i*7,7-i);}
+    const hit=this.scene.add.zone(0,0,width,height+30).setName('dialogue-hit').setInteractive({useHandCursor:true});layer.add([g,label,line,name]);if(heart)layer.add(heart);layer.add(hit);
+    const full=String(text),typewriter=options.typewriter!==false;let shown=typewriter?0:full.length,typing=typewriter,closed=false,timer=null;line.setText(typewriter?'':full);
+    if(typewriter)timer=this.scene.time.addEvent({delay:Math.max(12,options.typeSpeed??24),repeat:full.length-1,callback:()=>{shown++;line.setText(full.slice(0,shown));if(shown>=full.length)typing=false;}});
+    const cleanup=()=>{timer?.remove(false);hit.removeAllListeners();if(options.keyboard!==false){this.scene.input.keyboard.off('keydown-ENTER',advance);this.scene.input.keyboard.off('keydown-SPACE',advance);}if(this.activeDialogue===layer)this.activeDialogue=null;};
+    const close=instant=>{if(closed)return;closed=true;cleanup();if(instant){layer.destroy();return;}this.scene.tweens.add({targets:layer,alpha:0,y:layer.y-8,duration:130,onComplete:()=>layer.destroy()});};
+    const advance=()=>{if(closed)return;if(typing){timer?.remove(false);typing=false;shown=full.length;line.setText(full);return;}if(options.onAdvance){close();options.onAdvance();}else close();};
+    layer.dismiss=close;layer.advance=advance;hit.on('pointerdown',advance);if(options.keyboard!==false){this.scene.input.keyboard.on('keydown-ENTER',advance);this.scene.input.keyboard.on('keydown-SPACE',advance);}this.scene.events.once('shutdown',()=>close(true));
+    this.scene.tweens.add({targets:layer,alpha:1,scale:1,duration:150,ease:'Back.easeOut'});if(options.duration!==0)this.scene.time.delayedCall(options.duration??2800,()=>close());this.activeDialogue=layer;return layer;
   }
 }
