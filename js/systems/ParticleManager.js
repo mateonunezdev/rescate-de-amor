@@ -1,9 +1,11 @@
 export default class ParticleManager {
   constructor(scene) {
     this.scene = scene;
+    const cores=navigator.hardwareConcurrency||4,memory=navigator.deviceMemory||4;this.quality=(scene.sys.game.device.os.iOS||scene.sys.game.device.os.android||cores<=4||memory<=4)?.58:1;
   }
 
   burst(x, y, color = 0xffa3d8, count = 12, speed = 120) {
+    count=Math.max(4,Math.round(count*this.quality));
     const particles = this.scene.add.particles(x, y, undefined, {
       speed: { min: 40, max: speed },
       angle: { min: 0, max: 360 },

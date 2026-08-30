@@ -1,15 +1,15 @@
 import { GAME_CONFIG } from './config.js?v=20260820-professional-final-22';
-import BootScene from './scenes/BootScene.js?v=20260826-world-art-37';
+import BootScene from './scenes/BootScene.js?v=20260829-world-remaster-01';
 import MenuScene from './scenes/MenuScene.js?v=20260825-final-qa-33';
 import IntroScene from './scenes/IntroScene.js?v=20260826-kidnap-cinematic-36';
-import Level1Scene from './scenes/Level1Scene.js?v=20260828-level1-rebuild-44';
-import Level2Scene from './scenes/Level2Scene.js?v=20260826-world-art-37';
-import Level3Scene from './scenes/Level3Scene.js?v=20260826-world-art-37';
-import Level4Scene from './scenes/Level4Scene.js?v=20260826-world-art-37';
-import Level5Scene from './scenes/Level5Scene.js?v=20260826-world-art-37';
-import BossScene from './scenes/BossScene.js?v=20260826-cage-rig-35';
-import EndingScene from './scenes/EndingScene.js?v=20260826-cage-rig-35';
-import SecretScene from './scenes/SecretScene.js?v=20260823-master-final-30';
+import Level1Scene from './scenes/Level1Scene.js?v=20260829-world-remaster-01b';
+import Level2Scene from './scenes/Level2Scene.js?v=20260829-world-remaster-01';
+import Level3Scene from './scenes/Level3Scene.js?v=20260829-world-remaster-01';
+import Level4Scene from './scenes/Level4Scene.js?v=20260829-world-remaster-01d';
+import Level5Scene from './scenes/Level5Scene.js?v=20260829-world-remaster-01';
+import BossScene from './scenes/BossScene.js?v=20260829-definitive-48';
+import EndingScene from './scenes/EndingScene.js?v=20260829-definitive-48';
+import SecretScene from './scenes/SecretScene.js?v=20260829-definitive-48';
 
 const showDebugError = () => {
   let panel = document.getElementById('rescate-debug-panel');

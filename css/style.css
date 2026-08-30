@@ -30,7 +30,14 @@ body {
   display: grid;
   place-items: center;
   overflow: hidden;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
 }
+
+#rotate-device{display:none;position:fixed;inset:0;z-index:99999;background:#12091d;color:#ffe8c2;place-items:center;text-align:center;font:700 22px monospace;padding:32px;}
+#rotate-device small{display:block;margin-top:18px;color:#ffb8d5;font-size:15px;}
+
+@media (orientation:portrait) and (max-width:900px){#rotate-device{display:grid;}#game{visibility:hidden;}}
+@media (orientation:landscape) and (max-height:520px){#game{width:calc(100vw - env(safe-area-inset-left) - env(safe-area-inset-right));height:calc(100vh - env(safe-area-inset-top) - env(safe-area-inset-bottom));border:0;}}
 
 #game {
   width: min(100vw, 1440px);

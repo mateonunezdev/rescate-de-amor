@@ -28,11 +28,13 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.setCollideWorldBounds(true);
     this.setDepth(20);
     this.body.setSize(32,70);
-    this.body.setOffset(24,18);
+    // The opaque feet in every Paola frame end at source y=92. With an origin
+    // at 0.5, offset 22 makes body.bottom and the visible feet coincide.
+    this.body.setOffset(24,22);
 
     this.cursors = scene.input.keyboard.createCursorKeys();
-    this.keys = scene.input.keyboard.addKeys('A,D,S,W,SHIFT,SPACE,X,K,Z,J,C,L,E,V');
-    this.attackCooldown = 0;this.shieldActive=0;this.shieldCooldown=0;this.shieldDuration=1800;this.shieldCooldownMax=6500;this.shieldFx=null;
+    this.keys = scene.input.keyboard.addKeys('A,D,S,W,SHIFT,SPACE,X,K,Z,J,C,L,E,V,Q');
+    this.attackCooldown = 0;this.shieldActive=0;this.shieldCooldown=0;this.shieldDuration=1800;this.shieldCooldownMax=6500;this.shieldFx=null;this.dashCooldown=0;this.dashActive=0;
     this.loveCharge=0;this.chargeFxTimer=0;this.comboStep=0;this.comboTimer=0;this.airSlamming=false;this.specialCooldown=0;this.combatPoseUntil=0;this.combatPoseFrame=6;
   }
 
@@ -49,14 +51,16 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     const meleePressed = Phaser.Input.Keyboard.JustDown(this.keys.Z)||Phaser.Input.Keyboard.JustDown(this.keys.J);
     const specialPressed = Phaser.Input.Keyboard.JustDown(this.keys.C)||Phaser.Input.Keyboard.JustDown(this.keys.L);
     const shieldPressed = Phaser.Input.Keyboard.JustDown(this.keys.V);
+    const dashPressed=Phaser.Input.Keyboard.JustDown(this.keys.Q);
 
     if (jumpPressed) {
       this.jumpBufferTimer = this.jumpBufferWindow;
     }
     this.jumpBufferTimer = Math.max(0, this.jumpBufferTimer - delta);
     this.attackCooldown = Math.max(0, this.attackCooldown - delta);
-    this.comboTimer=Math.max(0,this.comboTimer-delta);this.specialCooldown=Math.max(0,this.specialCooldown-delta);this.shieldActive=Math.max(0,this.shieldActive-delta);this.shieldCooldown=Math.max(0,this.shieldCooldown-delta);if(this.comboTimer===0)this.comboStep=0;
+    this.comboTimer=Math.max(0,this.comboTimer-delta);this.specialCooldown=Math.max(0,this.specialCooldown-delta);this.shieldActive=Math.max(0,this.shieldActive-delta);this.shieldCooldown=Math.max(0,this.shieldCooldown-delta);this.dashCooldown=Math.max(0,this.dashCooldown-delta);this.dashActive=Math.max(0,this.dashActive-delta);if(this.comboTimer===0)this.comboStep=0;
     if(shieldPressed&&this.shieldCooldown<=0)this.activateLoveShield();if(this.shieldFx?.active){this.shieldFx.setPosition(this.x,this.y);this.shieldFx.setVisible(this.shieldActive>0);}
+    if(dashPressed&&this.dashCooldown<=0){this.dashCooldown=850;this.dashActive=180;this.invulnerable=Math.max(this.invulnerable,180);this.setVelocityX(this.facing*620);this.setAccelerationX(0);this.scene.particleManager?.burst(this.x,this.y,0xff8fc8,10,90);this.scene.cameras.main.shake(45,.002);}
     this.scene.uiManager?.updateShield?.(this.shieldActive,this.shieldCooldown,this.shieldCooldownMax);
 
     this.isGrounded = this.body.blocked.down || this.body.touching.down;
@@ -75,7 +79,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       this.jump();
     }
 
-    if (left && !right) {
+    if(this.dashActive>0){this.setVelocityX(this.facing*620);this.setAccelerationX(0);this.setDragX(0);}else if (left && !right) {
       this.facing = -1;
       this.setAccelerationX(-1100); this.setDragX(1500); this.setMaxVelocity(run ? this.runSpeed : this.speed, 700);
     } else if (right && !left) {
