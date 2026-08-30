@@ -1,5 +1,5 @@
 import { createMateoCageRig } from '../utils/CageRig.js?v=20260826-cage-rig-35';
-import UIManager from '../ui/UIManager.js?v=20260830-intro-level1-02';
+import UIManager from '../ui/UIManager.js?v=20260830-dialogue-layout-04';
 
 export default class IntroScene extends Phaser.Scene {
   constructor(){super('IntroScene');}
@@ -8,9 +8,9 @@ export default class IntroScene extends Phaser.Scene {
     this.step=0;this.locked=false;this.birds=[];this.cameras.main.fadeIn(650,8,5,20);this.cameras.main.setZoom(.96);this.cameras.main.zoomTo(1.03,4800,'Sine.easeInOut');this.cameras.main.pan(600,400,4800,'Sine.easeInOut');
     this.cinematicUi=new UIManager(this,{hud:false});
     this.makeBirdTexture();this.makePark();
-    this.paola=this.add.image(535,535,'paola-final',4).setScale(1.16).setDepth(20);
-    this.mateo=this.add.image(650,535,'mateo-final',1).setScale(1.12).setFlipX(true).setDepth(20);
-    this.tweens.add({targets:this.paola,scaleY:1.095,scaleX:1.073,duration:1150,yoyo:true,repeat:-1,ease:'Sine.easeInOut'});this.tweens.add({targets:this.mateo,scaleY:1.075,scaleX:1.045,duration:1320,yoyo:true,repeat:-1,ease:'Sine.easeInOut'});
+    this.paola=this.add.image(545,558,'paola-seated').setOrigin(.5,1).setScale(.82).setDepth(20);
+    this.mateo=this.add.image(655,558,'mateo-seated').setOrigin(.5,1).setScale(.82).setDepth(20);
+    this.tweens.add({targets:this.paola,y:556,duration:1150,yoyo:true,repeat:-1,ease:'Sine.easeInOut'});this.tweens.add({targets:this.mateo,y:556,duration:1320,yoyo:true,repeat:-1,ease:'Sine.easeInOut'});
     this.villain=this.add.image(1370,370,'pecho-final',0).setScale(1.32).setAlpha(0).setDepth(27);
     this.aura=this.add.circle(1370,370,110,0xd93b9a,.16).setAlpha(0).setDepth(26);
     this.prompt=this.add.text(640,686,'ENTER · ESPACIO · CLIC',{fontFamily:'monospace',fontSize:'14px',color:'#ead0e2'}).setOrigin(.5).setDepth(95);
@@ -24,13 +24,15 @@ export default class IntroScene extends Phaser.Scene {
 
   makePark(){
     this.add.image(640,360,'bg-picnic').setDisplaySize(1280,720).setDepth(-20);
-    this.add.rectangle(640,360,1280,720,0x7f2940,.06).setDepth(-19);
     for(let i=0;i<26;i++){const f=this.add.circle(Math.random()*1280,350+Math.random()*270,2,0xffe477,.8).setDepth(12);this.tweens.add({targets:f,y:f.y-35,x:f.x+(Math.random()-.5)*24,alpha:.18,duration:1200+Math.random()*1100,yoyo:true,repeat:-1});}for(let i=0;i<18;i++){const p=this.add.ellipse(Math.random()*1280,120+Math.random()*430,3,7,i%2?0xff9cbd:0xffdf9d,.55).setDepth(13).setAngle(Math.random()*180);this.tweens.add({targets:p,x:p.x-70-Math.random()*80,y:p.y+35,angle:p.angle+180,duration:2600+Math.random()*2200,repeat:-1});}
   }
 
   spawnBirds(count,target=null){for(let i=0;i<count;i++){const b=this.add.image(1320+i*35,260+(i%5)*48,'intro-pigeon').setScale(1.1).setDepth(44);this.birds.push(b);if(target){const a=i/count*Math.PI*2;b.setPosition(target.x+Math.cos(a)*115,target.y+Math.sin(a)*85);this.tweens.add({targets:b,angle:360,duration:520+i*18,repeat:-1});}else this.tweens.add({targets:b,x:-70,y:b.y+(i%2?70:-30),duration:2300+i*80,ease:'Linear'});}}
-  say(copy,action){action?.();const lines=String(copy).split('\n').map(s=>s.trim()).filter(Boolean);this.locked=true;const nextLine=()=>{const raw=lines.shift();if(!raw){this.locked=false;return;}const match=raw.match(/^([^:]+):\s*[“\"]?(.*?)[”\"]?$/),speaker=match?match[1]:'NARRADOR',line=match?match[2]:raw,isPecho=speaker.includes('PECHO'),isMateo=speaker==='MATEO',x=isPecho?920:isMateo?735:speaker==='PAOLA'?455:640,y=isPecho?315:isMateo?430:speaker==='PAOLA'?435:205;this.cinematicUi.showDialogueBubble(speaker,line,{x,y,width:speaker==='NARRADOR'?430:390,tail:isPecho||isMateo?'right':'left',variant:isPecho?'pecho':speaker==='NARRADOR'?'thought':'love',duration:0,keyboard:false,onAdvance:nextLine});};nextLine();}
-  bubble(speaker,line,x,y,tail='left',duration=1050){return this.cinematicUi.showDialogueBubble(speaker,line,{x,y,width:360,tail,duration,variant:speaker==='PECHO PALOMA'?'pecho':'love',keyboard:false});}
+  dialogueActor(speaker){return speaker==='PAOLA'?this.paola:speaker==='MATEO'?this.mateo:speaker.includes('PECHO')?this.villain:null;}
+  dialogueSafeObjects(){return[this.paola,this.mateo,this.villain,this.cageRig?.cage].filter(o=>o?.visible);}
+  say(copy,action){action?.();const lines=String(copy).split('\n').map(s=>s.trim()).filter(Boolean);this.locked=true;const nextLine=()=>{const raw=lines.shift();if(!raw){this.locked=false;return;}const match=raw.match(/^([^:]+):\s*[“\"]?(.*?)[”\"]?$/),speaker=match?match[1]:'NARRADOR',line=match?match[2]:raw,isPecho=speaker.includes('PECHO'),actor=this.dialogueActor(speaker),preferredSide=speaker==='PAOLA'?'left':'right';this.cinematicUi.showDialogueBubble(speaker,line,{speakerObject:actor,safeObjects:this.dialogueSafeObjects().filter(o=>o!==actor),preferredSide,width:speaker==='NARRADOR'?430:390,variant:isPecho?'pecho':speaker==='NARRADOR'?'thought':'love',duration:0,keyboard:false,onAdvance:nextLine});};nextLine();}
+  bubble(speaker,line,x,y,tail='left',duration=1050){const actor=this.dialogueActor(speaker);return this.cinematicUi.showDialogueBubble(speaker,line,{x,y,speakerObject:actor,safeObjects:this.dialogueSafeObjects().filter(o=>o!==actor),preferredSide:speaker==='PAOLA'?'left':'right',width:360,duration,variant:speaker==='PECHO PALOMA'?'pecho':'love',keyboard:false});}
+  standFromPicnic(){if(this.picnicStanding)return;this.picnicStanding=true;this.tweens.killTweensOf([this.paola,this.mateo]);this.tweens.add({targets:this.paola,x:510,y:535,scale:.72,duration:260,ease:'Sine.easeIn',onComplete:()=>{this.paola.setTexture('paola-final',0).setOrigin(.5).setScale(1.2);this.tweens.add({targets:this.paola,x:500,y:538,scale:1.35,duration:300,ease:'Back.easeOut'});}});this.tweens.add({targets:this.mateo,x:675,y:535,scale:.72,duration:310,ease:'Sine.easeIn',onComplete:()=>{this.mateo.setTexture('mateo-final',0).setOrigin(.5).setScale(1.16);this.tweens.add({targets:this.mateo,x:680,y:538,scale:1.3,duration:300,ease:'Back.easeOut'});}});}
   magicSpark(x,y,delay=0){
     const spark=this.add.text(x,y,Math.random()>.45?'♥':'✦',{fontFamily:'monospace',fontSize:`${14+Math.floor(Math.random()*10)}px`,color:Math.random()>.5?'#ff79c5':'#c681ff',stroke:'#4b164d',strokeThickness:2}).setOrigin(.5).setDepth(49).setAlpha(0);
     this.tweens.add({targets:spark,alpha:{from:0,to:1},x:x+(Math.random()-.5)*90,y:y-55-Math.random()*55,angle:(Math.random()-.5)*90,scale:{from:.45,to:1.15},duration:650,delay,yoyo:true,onComplete:()=>spark.destroy()});
@@ -83,7 +85,7 @@ export default class IntroScene extends Phaser.Scene {
       ()=>this.say('MATEO: “Llevaba días queriendo traerte aquí.”\nPAOLA: “¿Y tanto misterio era por esto?”'),
       ()=>this.say('MATEO: “Por esto… y por estar contigo.”\nPAOLA: “Qué cursi.”\nMATEO: “Pero estás sonriendo.”\nPAOLA: “No dije que no me gustara.”',()=>{const h=this.add.text(590,455,'♥',{fontSize:'40px',color:'#ff6fae'}).setOrigin(.5).setDepth(30);this.tweens.add({targets:h,y:420,scale:1.35,duration:650,yoyo:true,repeat:1});}),
       ()=>this.say('Una paloma los observa desde la oscuridad…',()=>{this.spawnBirds(2);const omen=this.add.circle(1050,260,12,0xff49b0,.7).setDepth(46);this.tweens.add({targets:omen,alpha:.1,scale:1.8,duration:500,yoyo:true,repeat:2,onComplete:()=>omen.destroy()});}),
-      ()=>this.say('MATEO: “Eso ya no parece coincidencia.”\nPAOLA: “Quédate cerca.”',()=>{this.tweens.killTweensOf([this.paola,this.mateo]);this.paola.setFrame(0).setPosition(500,538).setScale(1.35);this.mateo.setFrame(0).setPosition(680,538).setScale(1.3).setAngle(0);this.spawnBirds(12);this.add.rectangle(640,360,1280,720,0x090512,.2).setDepth(23);this.cameras.main.shake(120,.002);}),
+      ()=>this.say('MATEO: “Eso ya no parece coincidencia.”\nPAOLA: “Quédate cerca.”',()=>{this.standFromPicnic();this.spawnBirds(12);this.cameras.main.shake(120,.002);}),
       ()=>this.say('PECHO PALOMA: “Al fin.”\nMATEO: “¿Al fin qué?”',()=>{this.villain.setAlpha(1);this.aura.setAlpha(1);this.spawnBirds(8);for(let i=0;i<14;i++){const p=this.add.ellipse(900+Math.random()*330,420+Math.random()*180,4,9,0xff8fb9,.7).setDepth(25);this.tweens.add({targets:p,x:p.x-240,y:p.y-80,angle:220,alpha:0,duration:650+Math.random()*350,onComplete:()=>p.destroy()});}this.cameras.main.zoomTo(1.04,650,'Sine.easeOut');this.tweens.add({targets:[this.villain,this.aura],x:1030,y:335,duration:900,ease:'Back.easeOut',onComplete:()=>{this.cameras.main.shake(110,.0025);this.spawnBirds(8,this.villain);}});this.playCue('magic');}),
       ()=>this.say('PECHO PALOMA: “Al fin te encuentro sin tanta gente alrededor.”\nPAOLA: “¿Lo conoces?”\nMATEO: “No.”'),
       ()=>this.say('PECHO PALOMA: “Pero yo sí lo conozco. Mateo… llevo mucho tiempo observándote.”\n“He visto cómo sonríes… y cómo siempre eliges estar con ella.”'),

@@ -60,15 +60,27 @@ export default class UIManager {
     });
   }
 
+  getDialogueSafeZone(object,margin=28){
+    if(!object?.visible||!object.getBounds)return null;const b=object.getBounds(),camera=this.scene.cameras.main,zoom=camera.zoom||1,world=object.scrollFactorX===0?{x:b.x,y:b.y,width:b.width,height:b.height}:{x:(b.x-camera.worldView.x)*zoom+camera.x,y:(b.y-camera.worldView.y)*zoom+camera.y,width:b.width*zoom,height:b.height*zoom};return{x:world.x-margin,y:world.y-margin,width:world.width+margin*2,height:world.height+margin*2,right:world.x+world.width+margin,bottom:world.y+world.height+margin};
+  }
+
+  layoutDialogueBubble(width,height,options){
+    const viewportW=this.scene.scale.width,viewportH=this.scene.scale.height,margin=40,speakerZone=this.getDialogueSafeZone(options.speakerObject),safeZones=[speakerZone,...(options.safeObjects||[]).map(o=>this.getDialogueSafeZone(o))].filter(Boolean),speakerX=speakerZone?speakerZone.x+speakerZone.width/2:(options.x??viewportW/2),speakerY=speakerZone?speakerZone.y+speakerZone.height/2:(options.y??viewportH*.67),gap=18;
+    const above={x:speakerX,y:(speakerZone?.y??speakerY)-height/2-gap},below={x:speakerX,y:(speakerZone?.bottom??speakerY)+height/2+gap},left={x:(speakerZone?.x??speakerX)-width/2-gap,y:speakerY},right={x:(speakerZone?.right??speakerX)+width/2+gap,y:speakerY},side=options.preferredSide;
+    const preferred=options.preferredPosition?{x:options.preferredPosition.x,y:options.preferredPosition.y}:Number.isFinite(options.x)&&Number.isFinite(options.y)?{x:options.x,y:options.y}:null,candidates=[preferred,above,side==='left'?{...above,x:above.x-width*.34}:side==='right'?{...above,x:above.x+width*.34}:speakerX<viewportW/2?{...above,x:above.x-width*.3}:{...above,x:above.x+width*.3},left,right,below].filter(Boolean);
+    const clamp=p=>({x:Phaser.Math.Clamp(p.x,width/2+margin,viewportW-width/2-margin),y:Phaser.Math.Clamp(p.y,height/2+margin,viewportH-height/2-margin)}),overlaps=(p,z)=>p.x-width/2<z.right&&p.x+width/2>z.x&&p.y-height/2<z.bottom&&p.y+height/2>z.y;let chosen=clamp(candidates[0]);for(const candidate of candidates){const p=clamp(candidate);if(!safeZones.some(z=>overlaps(p,z))){chosen=p;break;}}
+    return{...chosen,speakerX,speakerY,safeZones,bubbleBounds:{x:chosen.x-width/2,y:chosen.y-height/2,width,height,right:chosen.x+width/2,bottom:chosen.y+height/2}};
+  }
+
   showDialogueBubble(speaker, text, options = {}) {
     if(options.replace!==false)this.activeDialogue?.dismiss?.(true);
+    const speakerKey=String(speaker).toUpperCase(),inferredActor=options.speakerObject??(speakerKey==='PAOLA'?(this.scene.paola||this.scene.player):speakerKey==='MATEO'?this.scene.mateo:speakerKey.includes('PECHO')?(this.scene.villain||this.scene.boss||this.scene.innerVillain):null),inferredSafe=options.safeObjects??[this.scene.paola,this.scene.player,this.scene.mateo,this.scene.villain,this.scene.boss,this.scene.cageRig?.cage,this.scene.innerCageRig?.cage].filter((o,i,a)=>o&&o!==inferredActor&&a.indexOf(o)===i);options={...options,speakerObject:inferredActor,safeObjects:inferredSafe};
     const villain=options.variant==='pecho'||String(speaker).toUpperCase().includes('PECHO'),love=options.variant==='love'||['PAOLA','MATEO'].includes(String(speaker).toUpperCase()),thought=options.variant==='thought';
     const viewportW=this.scene.scale.width,viewportH=this.scene.scale.height,maxW=Math.min(options.width??520,viewportW*(viewportW<800?.62:.43)),minW=Math.min(210,maxW),fontSize=viewportW<800?16:18;
     const estimated=Math.max(minW,Math.min(maxW,Math.sqrt(String(text).length)*48));
     const line=this.scene.add.text(0,0,'',{fontFamily:'monospace',fontSize:`${fontSize}px`,color:villain?'#fff1dc':'#38202b',wordWrap:{width:estimated-34},lineSpacing:4}).setOrigin(0,0);
     line.setText(text);const width=Math.ceil(Math.max(minW,line.width+34)/4)*4,height=Math.ceil(Math.max(76,line.height+50)/4)*4;line.setPosition(-width/2+17,-height/2+31);
-    let x=options.x??viewportW/2,y=options.y??viewportH*.67;x=Phaser.Math.Clamp(x,width/2+12,viewportW-width/2-12);y=Phaser.Math.Clamp(y,height/2+18,viewportH-height/2-42);
-    const tailRight=options.tail==='right'||(!options.tail&&x>viewportW/2),tailX=tailRight?width/2-42:-width/2+42,bg=villain?0x28122f:0xfff1d8,border=villain?0xdb4f9f:0x3a222e,accent=villain?0xf1bf67:String(speaker).toUpperCase()==='MATEO'?0x315d91:0xa92f67;
+    const layout=this.layoutDialogueBubble(width,height,options),x=layout.x,y=layout.y,tailRight=layout.speakerX>=x,tailX=Phaser.Math.Clamp(layout.speakerX-x,-width/2+34,width/2-34),bg=villain?0x28122f:0xfff1d8,border=villain?0xdb4f9f:0x3a222e,accent=villain?0xf1bf67:String(speaker).toUpperCase()==='MATEO'?0x315d91:0xa92f67;
     const layer=this.scene.add.container(x,y).setScrollFactor(0).setDepth(options.depth??1120).setAlpha(0).setScale(.92),g=this.scene.add.graphics();
     const pixelBox=(ox,oy,w,h,fill,stroke)=>{g.fillStyle(0x09050d,.32).fillRect(ox+6,oy+7,w,h);g.fillStyle(stroke,1).fillRect(ox+4,oy,w-8,h).fillRect(ox,oy+4,w,h-8);g.fillStyle(fill,1).fillRect(ox+8,oy+4,w-16,h-8).fillRect(ox+4,oy+8,w-8,h-16);};pixelBox(-width/2,-height/2,width,height,bg,border);
     g.fillStyle(border,1);if(tailRight){g.fillRect(tailX-4,height/2-4,28,8);g.fillRect(tailX+4,height/2+4,20,8);g.fillRect(tailX+12,height/2+12,12,8);}else{g.fillRect(tailX-24,height/2-4,28,8);g.fillRect(tailX-24,height/2+4,20,8);g.fillRect(tailX-24,height/2+12,12,8);}g.fillStyle(bg,1);g.fillRect(tailRight?tailX:tailX-20,height/2-4,20,8);g.fillRect(tailRight?tailX+8:tailX-20,height/2+4,12,8);
@@ -81,7 +93,7 @@ export default class UIManager {
     const cleanup=()=>{timer?.remove(false);hit.removeAllListeners();if(options.keyboard!==false){this.scene.input.keyboard.off('keydown-ENTER',advance);this.scene.input.keyboard.off('keydown-SPACE',advance);}if(this.activeDialogue===layer)this.activeDialogue=null;};
     const close=instant=>{if(closed)return;closed=true;cleanup();if(instant){layer.destroy();return;}this.scene.tweens.add({targets:layer,alpha:0,y:layer.y-8,duration:130,onComplete:()=>layer.destroy()});};
     const advance=()=>{if(closed)return;if(typing){timer?.remove(false);typing=false;shown=full.length;line.setText(full);return;}if(options.onAdvance){close();options.onAdvance();}else close();};
-    layer.dismiss=close;layer.advance=advance;hit.on('pointerdown',advance);if(options.keyboard!==false){this.scene.input.keyboard.on('keydown-ENTER',advance);this.scene.input.keyboard.on('keydown-SPACE',advance);}this.scene.events.once('shutdown',()=>close(true));
+    layer.dismiss=close;layer.advance=advance;layer.dialogueLayout=layout;hit.on('pointerdown',advance);if(options.keyboard!==false){this.scene.input.keyboard.on('keydown-ENTER',advance);this.scene.input.keyboard.on('keydown-SPACE',advance);}this.scene.events.once('shutdown',()=>close(true));
     this.scene.tweens.add({targets:layer,alpha:1,scale:1,duration:150,ease:'Back.easeOut'});if(options.duration!==0)this.scene.time.delayedCall(options.duration??2800,()=>close());this.activeDialogue=layer;return layer;
   }
 }

@@ -1,13 +1,13 @@
 import Player from '../entities/Player.js?v=20260827-level1-rebuild-38';
 import Enemy from '../entities/Enemy.js?v=20260827-level1-rebuild-38';
 import Collectible from '../entities/Collectible.js?v=20260823-master-final-30';
-import UIManager from '../ui/UIManager.js?v=20260830-intro-level1-02';
+import UIManager from '../ui/UIManager.js?v=20260830-dialogue-layout-04';
 import AudioManager from '../systems/AudioManager.js';
 import ParticleManager from '../systems/ParticleManager.js';
 import SaveManager from '../systems/SaveManager.js';
 import { gameState } from '../config.js';
 import { TextureFactory } from '../utils/TextureFactory.js?v=20260826-cage-rig-35';
-import WorldBuilder from '../world/WorldBuilder.js?v=20260830-structural-intro-level1-03';
+import WorldBuilder from '../world/WorldBuilder.js?v=20260830-dialogue-layout-04';
 import { createMateoCageRig } from '../utils/CageRig.js?v=20260826-cage-rig-35';
 
 const MEMORY = {
