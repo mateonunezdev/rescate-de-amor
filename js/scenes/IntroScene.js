@@ -17,8 +17,10 @@ export default class IntroScene extends Phaser.Scene {
     this.text=this.add.text(640,126,'',{fontFamily:'monospace',fontSize:'24px',color:'#fff0d0',align:'center',lineSpacing:8,wordWrap:{width:910},stroke:'#35162f',strokeThickness:4}).setOrigin(.5).setDepth(91);
     this.prompt=this.add.text(640,686,'ENTER · ESPACIO · CLIC',{fontFamily:'monospace',fontSize:'14px',color:'#ead0e2'}).setOrigin(.5).setDepth(95);
     this.skip=this.add.text(1165,34,'SALTAR INTRO',{fontFamily:'monospace',fontSize:'14px',color:'#e3c8db'}).setOrigin(.5).setDepth(96).setInteractive({useHandCursor:true}).on('pointerdown',()=>this.showTitle());
-    this.advance();const next=()=>this.advance();this.input.keyboard.on('keydown-ENTER',next);this.input.keyboard.on('keydown-SPACE',next);this.input.on('pointerdown',(p,targets)=>{if(!targets.includes(this.skip))next();});
+    this.showOpening();const next=()=>this.advance();this.input.keyboard.on('keydown-ENTER',next);this.input.keyboard.on('keydown-SPACE',next);this.input.on('pointerdown',(p,targets)=>{if(!targets.includes(this.skip))next();});
   }
+
+  showOpening(){this.locked=true;this.dialogPanel.setVisible(false);this.text.setVisible(false);this.prompt.setVisible(false);const layer=this.add.container(0,0).setDepth(200),black=this.add.rectangle(640,360,1280,720,0x050309,1),date=this.add.text(640,285,'19 • 09 • 2025',{fontFamily:'monospace',fontSize:'31px',color:'#ffe5b4',letterSpacing:4}).setOrigin(.5).setAlpha(0),copy=this.add.text(640,390,'“Hay historias que comienzan\nsin saber hasta dónde llegarán...”',{fontFamily:'monospace',fontSize:'24px',color:'#f7dce8',align:'center',lineSpacing:10}).setOrigin(.5).setAlpha(0);layer.add([black,date,copy]);this.tweens.add({targets:date,alpha:1,duration:700});this.tweens.add({targets:copy,alpha:1,duration:900,delay:650});this.time.delayedCall(3000,()=>this.tweens.add({targets:layer,alpha:0,duration:800,onComplete:()=>{layer.destroy();this.dialogPanel.setVisible(true);this.text.setVisible(true);this.prompt.setVisible(true);this.locked=false;this.advance();}}));}
 
   makeBirdTexture(){const g=this.add.graphics();g.fillStyle(0xf8f3f5,1);g.fillEllipse(15,12,20,12);g.fillCircle(22,8,7);g.fillTriangle(27,8,35,11,27,13);g.fillTriangle(14,10,2,1,6,14);g.fillStyle(0x252136,1);g.fillRect(23,6,2,2);g.generateTexture('intro-pigeon',36,20);g.destroy();}
 

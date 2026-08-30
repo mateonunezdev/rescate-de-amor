@@ -167,8 +167,9 @@ export default class BossScene extends Phaser.Scene {
     }
     if (this.phase !== this.lastAnnouncedPhase) {
       this.lastAnnouncedPhase = this.phase;
-      if (this.phase === 2) this.uiManager.showDialogueBubble('PECHO PALOMA', '¿Por qué ella?  —  MATEO: Porque la amo.', { x: 690, y: 500, tail: 'right', duration: 2700 });
-      else this.uiManager.showDialogueBubble('PAOLA', 'Nunca lo tuviste. El amor no se obliga.', { x: 600, y: 500, duration: 2700 });
+      this.phasePauseIn=this.phase===2?4200:2600;this.attackTimer=0;
+      if (this.phase === 2){this.uiManager.showDialogueBubble('PECHO PALOMA','¡Llevo tanto tiempo queriendo a Mateo! Lo quería para mí... y no soporto que te ame.',{x:730,y:430,tail:'right',duration:3000,width:710});this.time.delayedCall(2500,()=>this.uiManager.showDialogueBubble('MATEO','Yo amo a Paola. Eso nunca cambiará.',{x:930,y:455,tail:'right',duration:1700,width:510}));for(let i=0;i<16;i++){const feather=this.add.image(1280+Math.random()*100,170+Math.random()*420,'enemy-feather-shot').setScale(.8).setDepth(74);this.tweens.add({targets:feather,x:-80,y:feather.y+(Math.random()-.5)*130,angle:-180,duration:1500+Math.random()*900,onComplete:()=>feather.destroy()});}}
+      else{this.uiManager.showDialogueBubble('PECHO PALOMA','¡SI YO NO PUEDO TENERLO...!',{x:750,y:430,tail:'right',duration:2200,width:600});const dark=this.add.rectangle(640,360,1280,720,0x08000d,.58).setDepth(60);this.tweens.add({targets:dark,alpha:0,duration:2500,onComplete:()=>dark.destroy()});const icons=['♥','★','🌹','✉','◆'];icons.forEach((icon,i)=>{const memory=this.add.text(this.player.x,this.player.y,icon,{fontFamily:'monospace',fontSize:'28px',color:'#ffe4a8'}).setOrigin(.5).setDepth(75);const angle=i/icons.length*Math.PI*2;this.tweens.add({targets:memory,x:this.player.x+Math.cos(angle)*105,y:this.player.y+Math.sin(angle)*80,duration:700,yoyo:true,repeat:2,onComplete:()=>memory.destroy()});});this.uiManager.showMessage('IMPULSO DE AMOR ❤️','#fff0b8',2400);}
       this.restoreBossVisibility();
     }
   }
@@ -371,9 +372,9 @@ export default class BossScene extends Phaser.Scene {
     gameState.currentScene = 'EndingScene';
     gameState.achievements = [...new Set([...(gameState.achievements || []), 'Reina derrotada', 'Sin miedo a las palomas'])];
     localStorage.setItem('rescate-de-amor-save', JSON.stringify(gameState));
-    this.time.delayedCall(5200,()=>this.uiManager.showDialogueBubble('PAOLA','Entonces abre la jaula.',{x:380,y:430,duration:2100,width:460}));
-    this.time.delayedCall(5700,()=>{this.cell?.setAlpha(.35);this.uiManager.showMessage('El candado pierde su magia. Pecho Paloma lo deja libre.','#ffe9b0',1900);});
-    this.victoryTransitionIn=7600;
+    this.time.delayedCall(5000,()=>this.uiManager.showDialogueBubble('PECHO PALOMA','Esto es humillante...',{x:850,y:350,tail:'right',duration:1500,width:430}));
+    this.time.delayedCall(6400,()=>{this.uiManager.showDialogueBubble('PECHO PALOMA','Tú no viste nada.',{x:850,y:350,tail:'right',duration:1400,width:390});this.bossBirds.forEach((bird,i)=>this.tweens.add({targets:bird,x:1380,y:80+i*65,duration:1100+i*100}));this.tweens.add({targets:this.boss,x:1450,y:120,duration:1350,ease:'Sine.easeIn'});});
+    this.victoryTransitionIn=8200;
   }
 
   update(time, delta) {
@@ -382,6 +383,7 @@ export default class BossScene extends Phaser.Scene {
     if(!this.combatStarted){this.updateBossIntro(delta);return;}
 
     this.player.update(time, delta);
+    if(this.phasePauseIn>0){this.phasePauseIn-=delta;this.restoreBossVisibility();return;}
     this.bossInvulnerable=Math.max(0,this.bossInvulnerable-delta);
     this.displayedBossHealth=Phaser.Math.Linear(this.displayedBossHealth,this.bossHealth,.12);this.updateHealthBar();
 

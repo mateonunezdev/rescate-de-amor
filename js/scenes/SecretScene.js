@@ -1,14 +1,22 @@
 import AudioManager from '../systems/AudioManager.js';
 import { gameState } from '../config.js';
+import { TextureFactory } from '../utils/TextureFactory.js?v=20260826-cage-rig-35';
 
 export default class SecretScene extends Phaser.Scene {
   constructor(){super('SecretScene');}
 
   create(){
-    this.audioManager=new AudioManager(this);this.audioManager.playMusic('endingMusic');this.cameras.main.fadeIn(900,8,3,15);this.cameras.main.setBackgroundColor('#08040f');
-    this.add.image(640,360,'bg-romantic').setDisplaySize(1280,720).setTint(0x8a3a68).setDepth(-20);this.add.rectangle(640,360,1280,720,0x120719,.68).setDepth(-19);
-    this.makeLoveWall();this.makeFallingLove();this.makeCouple();this.makeCenterMessage();this.time.delayedCall(6500,()=>this.makeButtons());
-    gameState.secretUnlocked=true;gameState.currentScene='SecretScene';localStorage.setItem('rescate-de-amor-save',JSON.stringify(gameState));
+    if(!gameState.secretUnlocked){this.scene.start('MenuScene');return;}
+    this.audioManager=new AudioManager(this);this.audioManager.playMusic('endingMusic');this.cameras.main.setBackgroundColor('#000000');TextureFactory.createCollectibleTexture(this,'rose');
+    const rose=this.add.image(640,330,'collectible-rose').setScale(1.8).setDepth(5).setInteractive({useHandCursor:true}),hint=this.add.text(640,445,'Tócala.',{fontFamily:'monospace',fontSize:'22px',color:'#ffd6e4'}).setOrigin(.5).setDepth(5);this.tweens.add({targets:rose,scale:2.05,duration:850,yoyo:true,repeat:-1,ease:'Sine.easeInOut'});this.cameras.main.fadeIn(900,0,0,0);
+    const reveal=()=>{rose.disableInteractive();this.tweens.killTweensOf(rose);this.tweens.add({targets:[rose,hint],alpha:0,duration:500,onComplete:()=>{rose.destroy();hint.destroy();this.revealFuture();}});};rose.once('pointerdown',reveal);this.input.keyboard.once('keydown-ENTER',reveal);this.input.keyboard.once('keydown-SPACE',reveal);
+    gameState.currentScene='SecretScene';localStorage.setItem('rescate-de-amor-save',JSON.stringify(gameState));
+  }
+
+  revealFuture(){
+    this.add.image(640,360,'bg-romantic').setDisplaySize(1280,720).setTint(0xd88bb1).setDepth(-20);this.add.rectangle(640,360,1280,720,0x120719,.58).setDepth(-19);this.makeFallingLove();
+    const message=this.add.text(640,235,'“Esta historia todavía se está escribiendo.”',{fontFamily:'monospace',fontSize:'27px',color:'#fff0d5',align:'center',stroke:'#54183f',strokeThickness:6}).setOrigin(.5).setDepth(32).setAlpha(0),chapter=this.add.text(640,340,'CAPÍTULO II\n\nNuestro futuro ❤️',{fontFamily:'monospace',fontSize:'42px',color:'#fff0cc',fontStyle:'bold',align:'center',stroke:'#6d174d',strokeThickness:8}).setOrigin(.5).setDepth(33).setAlpha(0);
+    this.tweens.add({targets:message,alpha:1,duration:800});this.time.delayedCall(2100,()=>this.tweens.add({targets:message,alpha:0,duration:450}));this.time.delayedCall(2600,()=>{this.tweens.add({targets:chapter,alpha:1,duration:850});this.makeCouple();this.tweens.add({targets:[this.paola,this.mateo],x:'+=150',duration:5200,ease:'Sine.easeInOut'});});this.time.delayedCall(5200,()=>{chapter.setText('Continuará...\n\n19 • 09 • 2025 — ∞');});this.time.delayedCall(7600,()=>this.makeButtons());
   }
 
   makeLoveWall(){

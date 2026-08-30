@@ -1,4 +1,4 @@
-import BaseLevelScene from './BaseLevelScene.js?v=20260829-world-rebuild-01';
+import BaseLevelScene from './BaseLevelScene.js?v=20260830-definitive-polish-01';
 export default class Level1Scene extends BaseLevelScene{constructor(){super('Level1Scene',{
 title:'NIVEL 1 · BOSQUE DE LOS RECUERDOS',objective:'Sigue el sendero, cruza las ruinas y recupera la Carta I.',theme:'forest',midTint:0x557b7b,width:7200,height:720,spawn:{x:120,y:560},music:'forestMusic',sky:'#0b1630',accent:0xff6ea9,
 sections:[{x:120,label:'SENDERO TRANQUILO'},{x:1120,label:'RUINAS DEL PUENTE'},{x:2050,label:'PATIO DE GUARDIANES'},{x:3040,label:'PUERTA DEL RECUERDO'},{x:3400,label:'PASADIZO DE RAÍCES'},{x:4450,label:'SALA DE LOS ECOS'},{x:5750,label:'CAPITÁN PALOMA'},{x:6500,label:'ÁRBOL DEL CORAZÓN'}],
