@@ -7,7 +7,7 @@ import ParticleManager from '../systems/ParticleManager.js';
 import SaveManager from '../systems/SaveManager.js';
 import { gameState } from '../config.js';
 import { TextureFactory } from '../utils/TextureFactory.js?v=20260826-cage-rig-35';
-import WorldBuilder from '../world/WorldBuilder.js?v=20260830-intro-level1-02';
+import WorldBuilder from '../world/WorldBuilder.js?v=20260830-structural-intro-level1-03';
 import { createMateoCageRig } from '../utils/CageRig.js?v=20260826-cage-rig-35';
 
 const MEMORY = {

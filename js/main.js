@@ -1,7 +1,7 @@
 import { GAME_CONFIG } from './config.js?v=20260820-professional-final-22';
-import BootScene from './scenes/BootScene.js?v=20260830-intro-level1-02';
+import BootScene from './scenes/BootScene.js?v=20260830-structural-intro-level1-03';
 import MenuScene from './scenes/MenuScene.js?v=20260825-final-qa-33';
-import IntroScene from './scenes/IntroScene.js?v=20260830-intro-level1-02';
+import IntroScene from './scenes/IntroScene.js?v=20260830-structural-intro-level1-03';
 import Level1Scene from './scenes/Level1Scene.js?v=20260830-intro-level1-02';
 import Level2Scene from './scenes/Level2Scene.js?v=20260830-definitive-polish-01';
 import Level3Scene from './scenes/Level3Scene.js?v=20260830-definitive-polish-01';
