@@ -42,6 +42,6 @@ export default class BootScene extends Phaser.Scene {
     const missing=required.filter(key=>!this.textures.exists(key));
     if(missing.length)throw new Error(`Assets visuales obligatorios ausentes: ${missing.join(', ')}`);
     console.info('[ARTE FINAL ACTIVO]',required.map(key=>`${key}:${this.textures.get(key).frameTotal} frames`).join(' · '));
-    this.scene.start('MenuScene');
+    const level=Number(new URLSearchParams(location.search).get('levelDebug'));this.scene.start(level>=1&&level<=5?`Level${level}Scene`:'MenuScene');
   }
 }
