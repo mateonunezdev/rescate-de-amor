@@ -73,7 +73,8 @@ export default class IntroScene extends Phaser.Scene {
   }
 
   flyToCastle(){
-    this.locked=true;this.prompt.setText('LA JAULA VUELA HACIA EL CASTILLO…');this.villain.setVisible(true).setAlpha(1).setFrame(1);this.aura.setVisible(true).setAlpha(1);this.paola.setFrame(2);this.bubble('PAOLA','¡MATEO!',510,420,'right',1350);this.time.delayedCall(450,()=>this.bubble('MATEO','¡PAOLA!',790,345,'left',1350));this.tweens.add({targets:this.paola,x:820,duration:2300,ease:'Sine.easeInOut',onComplete:()=>this.paola.setFrame(5)});this.tweens.add({targets:this.cageRig,x:1080,y:215,duration:3100,ease:'Sine.easeInOut'});this.tweens.add({targets:[this.villain,this.aura],x:1160,y:195,duration:3000,ease:'Sine.easeInOut'});for(let i=0;i<18;i++)this.time.delayedCall(i*150,()=>this.magicSpark(this.cageRig.x-20,this.cageRig.y+90));this.birds.forEach((b,i)=>this.tweens.add({targets:b,x:1030+(i%5)*35,y:150+(i%4)*40,duration:2400+i*45,ease:'Sine.easeInOut'}));this.cameras.main.pan(760,330,2500,'Sine.easeInOut');this.cameras.main.zoomTo(1.08,2500,'Sine.easeInOut');this.time.delayedCall(3100,()=>this.cameras.main.fadeOut(240,8,4,18));this.time.delayedCall(3400,()=>{this.cameras.main.fadeIn(380,8,4,18);this.cageRig.setVisible(false);this.villain.setVisible(false);this.aura.setVisible(false);this.birds.forEach(b=>b.setVisible(false));this.paola.setPosition(760,538).setFrame(5).setVisible(true);this.cameras.main.setZoom(1).centerOn(640,360);this.step=14;this.locked=false;this.prompt.setText('ENTER · ESPACIO · CLIC');});
+    this.paola.setVisible(true).setAlpha(1).setDepth(45).setScale(1.35);
+    this.locked=true;this.prompt.setText('LA JAULA VUELA HACIA EL CASTILLO…');this.villain.setVisible(true).setAlpha(1).setFrame(1);this.aura.setVisible(true).setAlpha(1);this.paola.setFrame(2);this.bubble('PAOLA','¡MATEO!',510,420,'right',1350);this.time.delayedCall(450,()=>this.bubble('MATEO','¡PAOLA!',790,345,'left',1350));this.time.delayedCall(1550,()=>this.bubble('MATEO','Paola va a venir.',790,250,'left',1000));this.time.delayedCall(2350,()=>this.bubble('PECHO PALOMA','Eso espero.',1010,175,'right',850));this.tweens.add({targets:this.paola,x:820,duration:2300,ease:'Sine.easeInOut',onComplete:()=>this.paola.setFrame(5)});this.tweens.add({targets:this.cageRig,x:1080,y:215,duration:3100,ease:'Sine.easeInOut'});this.tweens.add({targets:[this.villain,this.aura],x:1160,y:195,duration:3000,ease:'Sine.easeInOut'});for(let i=0;i<18;i++)this.time.delayedCall(i*150,()=>this.magicSpark(this.cageRig.x-20,this.cageRig.y+90));this.birds.forEach((b,i)=>this.tweens.add({targets:b,x:1030+(i%5)*35,y:150+(i%4)*40,duration:2400+i*45,ease:'Sine.easeInOut'}));this.cameras.main.pan(760,330,2500,'Sine.easeInOut');this.cameras.main.zoomTo(1.08,2500,'Sine.easeInOut');this.time.delayedCall(3100,()=>this.cameras.main.fadeOut(240,8,4,18));this.time.delayedCall(3400,()=>{this.cameras.main.fadeIn(380,8,4,18);this.cageRig.setVisible(false);this.villain.setVisible(false);this.aura.setVisible(false);this.birds.forEach(b=>b.setVisible(false));this.paola.setPosition(760,538).setFrame(5).setVisible(true);this.cameras.main.setZoom(1).centerOn(640,360);this.step=15;this.locked=false;this.prompt.setText('ENTER · ESPACIO · CLIC');});
   }
 
   showGardenResolve(){
@@ -88,7 +89,7 @@ export default class IntroScene extends Phaser.Scene {
       ()=>this.say('MATEO: “Eso ya no parece coincidencia.”\nPAOLA: “Quédate cerca.”',()=>{this.standFromPicnic();this.spawnBirds(12);this.cameras.main.shake(120,.002);}),
       ()=>this.say('PECHO PALOMA: “Al fin.”\nMATEO: “¿Al fin qué?”',()=>{this.villain.setAlpha(1);this.aura.setAlpha(1);this.spawnBirds(8);for(let i=0;i<14;i++){const p=this.add.ellipse(900+Math.random()*330,420+Math.random()*180,4,9,0xff8fb9,.7).setDepth(25);this.tweens.add({targets:p,x:p.x-240,y:p.y-80,angle:220,alpha:0,duration:650+Math.random()*350,onComplete:()=>p.destroy()});}this.cameras.main.zoomTo(1.04,650,'Sine.easeOut');this.tweens.add({targets:[this.villain,this.aura],x:1030,y:335,duration:900,ease:'Back.easeOut',onComplete:()=>{this.cameras.main.shake(110,.0025);this.spawnBirds(8,this.villain);}});this.playCue('magic');}),
       ()=>this.say('PECHO PALOMA: “Al fin te encuentro sin tanta gente alrededor.”\nPAOLA: “¿Lo conoces?”\nMATEO: “No.”'),
-      ()=>this.say('PECHO PALOMA: “Pero yo sí lo conozco. Mateo… llevo mucho tiempo observándote.”\n“He visto cómo sonríes… y cómo siempre eliges estar con ella.”'),
+      ()=>this.say('PECHO PALOMA: “Pero yo sí lo conozco. Mateo… llevo mucho tiempo observándote.”\nPECHO PALOMA: “He visto cómo sonríes… y cómo siempre eliges estar con ella.”'),
       ()=>this.say('PAOLA: “Eso no es amor.”\nPECHO PALOMA: “Tú no decides lo que siento.”\nMATEO: “Y tú tampoco decides por mí.”'),
       ()=>this.say('PECHO PALOMA: “Entonces tendré que darte tiempo para entenderlo.”'),
       ()=>this.say('MATEO: “¡Paola!”\nPAOLA: “¡Mateo!”',()=>{this.paola.setFrame(5);this.tweens.add({targets:this.paola,x:610,duration:500});this.closeCage();}),
@@ -96,7 +97,7 @@ export default class IntroScene extends Phaser.Scene {
       ()=>this.say('Paola intenta alcanzarlo…',()=>this.magicPush()),
       ()=>this.say('PECHO PALOMA: “Entonces ven al castillo.”\nPAOLA: “¡NO TE VOY A DEJAR!”',()=>this.flyToCastle()),
       ()=>{},
-      ()=>this.say('MATEO: “Paola va a venir.”\nPECHO PALOMA: “Eso espero.”'),
+      ()=>{},
       ()=>this.showGardenResolve(),
       ()=>this.showTitle(),
     ];if(this.step<steps.length)steps[this.step++]();
