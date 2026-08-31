@@ -14,7 +14,8 @@ export default class WorldBuilder{
 
   normalizeSurface(def){
     const id=def.id.toLowerCase(),bridge=/bridge|glasswalk/.test(id),balcony=/balcony|ledge|walk|shelf/.test(id);
-    return {...def,visual:def.visual||(bridge?'bridge':def.kind==='ground'?'terrain':balcony?'balcony':'platform'),walkableTop:def.top,colliderWidth:def.colliderWidth||def.width,colliderOffset:def.colliderOffset||0,supportType:def.supportType||(def.kind==='ground'?'filled':bridge?'bridge':this.data.theme==='tower'?'wall-anchor':'columns')};
+    const left=def.left??(def.x??0)-def.width/2,right=def.right??(def.x??0)+def.width/2;
+    return {...def,visual:def.visual||(bridge?'bridge':def.kind==='ground'?'terrain':balcony?'balcony':'platform'),walkableTop:def.top,colliderWidth:def.colliderWidth||def.width,colliderOffset:def.colliderOffset||0,supportType:def.supportType||(def.kind==='ground'?'filled':bridge?'bridge':this.data.theme==='tower'?'wall-anchor':'columns'),connection:def.connection||{left,right},hazard:def.hazard||null};
   }
 
   isLevel1Forest(){return this.data.theme==='forest'&&this.scene.scene.key==='Level1Scene';}

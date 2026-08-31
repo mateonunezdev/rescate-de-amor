@@ -5,6 +5,6 @@ export function createMateoCageRig(scene,x,y,options={}){
   mateo.setPosition(0,options.mateoY??24).setScale(options.mateoScale??.82).setDepth(1);
   const cage=scene.add.image(0,0,'gothic-cage').setScale(options.cageScale??.7).setDepth(2);
   const lock=scene.add.text(0,32,'♥',{fontFamily:'monospace',fontSize:'16px',color:'#ffd372',stroke:'#6f244f',strokeThickness:3}).setOrigin(.5).setDepth(3).setVisible(options.locked!==false);
-  rig.add([glow,mateo,cage,lock]);rig.glow=glow;rig.mateo=mateo;rig.cage=cage;rig.lock=lock;rig.setLocked=value=>{lock.setVisible(value);return rig;};
+  rig.add([glow,mateo,cage,lock]);rig.glow=glow;rig.mateo=mateo;rig.cage=cage;rig.lock=lock;rig.capturedActor=mateo;rig.setLocked=value=>{lock.setVisible(value);return rig;};rig.setCapturedPose=frame=>{mateo.setFrame(frame);return rig;};
   return rig;
 }

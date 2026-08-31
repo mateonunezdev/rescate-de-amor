@@ -1,14 +1,14 @@
 import Player from '../entities/Player.js?v=20260827-level1-rebuild-38';
 import Enemy from '../entities/Enemy.js?v=20260827-level1-rebuild-38';
 import Collectible from '../entities/Collectible.js?v=20260823-master-final-30';
-import UIManager from '../ui/UIManager.js?v=20260830-dialogue-layout-04';
+import UIManager from '../ui/UIManager.js?v=20260831-intro-world-repair-02';
 import AudioManager from '../systems/AudioManager.js';
 import ParticleManager from '../systems/ParticleManager.js';
 import SaveManager from '../systems/SaveManager.js';
 import { gameState } from '../config.js';
 import { TextureFactory } from '../utils/TextureFactory.js?v=20260830-structural-real-05';
-import WorldBuilder from '../world/WorldBuilder.js?v=20260831-final-structural-world-01';
-import { createMateoCageRig } from '../utils/CageRig.js?v=20260826-cage-rig-35';
+import WorldBuilder from '../world/WorldBuilder.js?v=20260831-intro-world-repair-02';
+import { createMateoCageRig } from '../utils/CageRig.js?v=20260831-intro-world-repair-02';
 
 const MEMORY = {
   heart: ['CORAZÓN', 'Contigo, cada latido es especial.'],
@@ -90,7 +90,7 @@ export default class BaseLevelScene extends Phaser.Scene {
     Object.keys(MEMORY).forEach(t => TextureFactory.createCollectibleTexture(this,t));
   }
 
-  makeHazards(){const defs=this.dataDef.hazards||[],keys={8:this.scene.key==='Level1Scene'?'hazard-root-thorns':'hazard-thorns',9:'hazard-flame',10:'hazard-blade',11:'hazard-magic'};this.hazards=[];defs.forEach((def,i)=>{const key=keys[def.frame]||'hazard-thorns',h=this.add.image(def.x,def.y,key).setName(key).setDepth(12).setScale(def.frame===10?1.05:1.2);h.baseScaleX=h.scaleX;h.baseScaleY=h.scaleY;this.physics.add.existing(h,true);h.body.setSize(Math.min(58,h.displayWidth*.72),Math.min(30,h.displayHeight*.42));h.phase=i*430;h.warning=this.add.ellipse(def.x,def.y+14,74,20,this.dataDef.accent,.08).setStrokeStyle(2,this.dataDef.accent,.65).setDepth(11);this.hazards.push(h);this.physics.add.overlap(this.player,h,()=>{if(h.dangerous)this.player.takeDamage(1,h);});});}
+  makeHazards(){const defs=this.dataDef.hazards||[],themeKeys={forest:'hazard-root-thorns',garden:'hazard-thorns',fortress:'hazard-blade',tower:'hazard-magic',palace:'hazard-magic'},frameKeys={8:'hazard-root-thorns',9:'hazard-flame',10:'hazard-blade',11:'hazard-magic'};this.hazards=[];defs.forEach((def,i)=>{const surfaces=[...this.worldBuilder.surfaces.values()],surface=def.surface?this.worldBuilder.getSurface(def.surface):surfaces.filter(s=>def.x>=s.left-12&&def.x<=s.right+12).sort((a,b)=>Math.abs(a.top-def.y)-Math.abs(b.top-def.y))[0]||surfaces.sort((a,b)=>Math.min(Math.abs(def.x-a.left),Math.abs(def.x-a.right))-Math.min(Math.abs(def.x-b.left),Math.abs(def.x-b.right)))[0],key=def.texture||themeKeys[this.dataDef.theme]||frameKeys[def.frame]||'hazard-thorns',x=surface?Phaser.Math.Clamp(def.x,surface.left+24,surface.right-24):def.x,h=this.add.image(x,def.y,key).setName(`${this.dataDef.theme}:${key}`).setDepth(12).setScale(def.frame===10?1.05:1.2);if(surface)h.setY(surface.top-h.displayHeight*.28);h.baseScaleX=h.scaleX;h.baseScaleY=h.scaleY;h.supportSurface=surface?.id;this.physics.add.existing(h,true);h.body.setSize(Math.min(58,h.displayWidth*.72),Math.min(30,h.displayHeight*.42)).setOffset((h.width-Math.min(58,h.displayWidth*.72))/2,h.height-Math.min(30,h.displayHeight*.42));h.phase=i*430;h.warning=this.add.ellipse(h.x,surface?.top??h.y+14,74,20,this.dataDef.accent,.08).setStrokeStyle(2,this.dataDef.accent,.65).setDepth(11);this.hazards.push(h);this.physics.add.overlap(this.player,h,()=>{if(h.dangerous)this.player.takeDamage(1,h);});});}
 
   makePuzzleDoor(x,label){const floor=[...this.worldBuilder.surfaces.values()].filter(s=>x>=s.left&&x<=s.right).sort((a,b)=>b.top-a.top)[0],door=this.worldBuilder.createDoor({id:'puzzle-door',kind:'puzzle',x,y:floor?.top??648,width:118,height:238});door.rune=this.add.text(x,(floor?.top??648)-170,this.dataDef.theme==='forest'?'♥':this.dataDef.theme==='garden'?'🌹':this.dataDef.theme==='tower'?'♥':'ᚱ',{fontFamily:'monospace',fontSize:'28px',color:'#ff91c4'}).setOrigin(.5).setDepth(29);door.nameText=this.add.text(x,(floor?.top??648)-18,label,{fontFamily:'monospace',fontSize:'12px',color:'#ffe8c2',align:'center',backgroundColor:'#211328',padding:{x:6,y:3}}).setOrigin(.5).setDepth(29);return door;}
 
