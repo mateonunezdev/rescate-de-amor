@@ -6,6 +6,7 @@ export default class Collectible extends Phaser.GameObjects.Container {
     this.value = 1;
     this.collected = false;
     this.kind = type;
+    this.category=type.startsWith('card')?'card':type==='checkpoint'?'checkpoint':['heart','star','letter','diamond'].includes(type)?'memory':'pickup';
 
     const palette = {
       heart: { color: 0xff6d9d, glow: 0xffbfd7 },
@@ -24,7 +25,7 @@ export default class Collectible extends Phaser.GameObjects.Container {
 
     scene.add.existing(this);
     scene.physics.add.existing(this, true);
-    this.pickupWidth=type.startsWith('card')?92:64;this.pickupHeight=type.startsWith('card')?110:78;this.pickupRange=type.startsWith('card')?104:72;this.magnetizing=false;
+    this.pickupWidth=this.category==='card'?108:this.category==='memory'?84:64;this.pickupHeight=this.category==='card'?126:this.category==='memory'?96:78;this.pickupRange=this.category==='card'?132:this.category==='memory'?110:82;this.magnetizing=false;
     this.body.setSize(this.pickupWidth, this.pickupHeight);
     this.body.setOffset(-this.pickupWidth/2, -this.pickupHeight/2);
     this.setDepth(10);
@@ -47,7 +48,7 @@ export default class Collectible extends Phaser.GameObjects.Container {
     this.collected = true;
     if (this.body) this.body.enable = false;
     this.scene.particleManager?.roseBurst(this.x, this.y);
-    this.scene.audioManager?.playSfx(this.type === 'heart' ? 'heart' : this.type === 'diamond' ? 'diamond' : 'rose');
+    this.scene.audioManager?.playSfx(this.category==='card'?'checkpoint':this.type === 'heart' ? 'heart' : this.type === 'diamond' ? 'diamond' : 'rose');
     this.scene.events.emit('collectible-collected', this.type, this.x, this.y);
     this.scene.tweens.killTweensOf([this,this.sprite,this.glow]);
     this.scene.tweens.add({targets:this.sprite,y:this.sprite.y-45,scale:1.8,alpha:0,duration:260,ease:'Back.easeIn'});this.scene.tweens.add({targets:this.glow,scale:2,alpha:0,duration:220,onComplete:()=>this.destroy()});

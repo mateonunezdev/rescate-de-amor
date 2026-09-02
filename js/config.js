@@ -39,6 +39,7 @@ export const gameState = {
   achievements: [],
   checkpoint: null,
   power: 'none',
+  unlockedPowers: [],
   saved: false,
   finalLetterUnlocked: false,
   secretUnlocked: false,

@@ -14,6 +14,7 @@ export default class SaveManager {
       const data = { ...this.defaults(), ...parsed };
       data.memories = Array.isArray(parsed.memories) ? [...new Set(parsed.memories)] : [];
       data.achievements = Array.isArray(parsed.achievements) ? [...new Set(parsed.achievements)] : [];
+      data.unlockedPowers = Array.isArray(parsed.unlockedPowers) ? [...new Set(parsed.unlockedPowers)] : [];
       data.settings = { ...gameState.settings, ...(parsed.settings || {}) };
       return data;
     } catch (error) {

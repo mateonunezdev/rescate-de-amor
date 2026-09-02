@@ -31,9 +31,9 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.body.setOffset(24,18);
 
     this.cursors = scene.input.keyboard.createCursorKeys();
-    this.keys = scene.input.keyboard.addKeys('A,D,S,W,SHIFT,SPACE,X,K,Z,J,C,L,E,V');
+    this.keys = scene.input.keyboard.addKeys('A,D,S,W,SHIFT,SPACE,X,K,Z,J,C,L,E,V,Q');
     this.attackCooldown = 0;this.shieldActive=0;this.shieldCooldown=0;this.shieldDuration=1800;this.shieldCooldownMax=6500;this.shieldFx=null;
-    this.loveCharge=0;this.chargeFxTimer=0;this.comboStep=0;this.comboTimer=0;this.airSlamming=false;this.specialCooldown=0;this.combatPoseUntil=0;this.combatPoseFrame=6;
+    this.loveCharge=0;this.chargeFxTimer=0;this.comboStep=0;this.comboTimer=0;this.airSlamming=false;this.specialCooldown=0;this.combatPoseUntil=0;this.combatPoseFrame=6;this.dashCooldown=0;this.dashTime=0;this.dashTrailTimer=0;
   }
 
   update(time, delta) {
@@ -49,13 +49,16 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     const meleePressed = Phaser.Input.Keyboard.JustDown(this.keys.Z)||Phaser.Input.Keyboard.JustDown(this.keys.J);
     const specialPressed = Phaser.Input.Keyboard.JustDown(this.keys.C)||Phaser.Input.Keyboard.JustDown(this.keys.L);
     const shieldPressed = Phaser.Input.Keyboard.JustDown(this.keys.V);
+    const dashPressed=Phaser.Input.Keyboard.JustDown(this.keys.SHIFT)||Phaser.Input.Keyboard.JustDown(this.keys.Q);
 
     if (jumpPressed) {
       this.jumpBufferTimer = this.jumpBufferWindow;
     }
     this.jumpBufferTimer = Math.max(0, this.jumpBufferTimer - delta);
     this.attackCooldown = Math.max(0, this.attackCooldown - delta);
-    this.comboTimer=Math.max(0,this.comboTimer-delta);this.specialCooldown=Math.max(0,this.specialCooldown-delta);this.shieldActive=Math.max(0,this.shieldActive-delta);this.shieldCooldown=Math.max(0,this.shieldCooldown-delta);if(this.comboTimer===0)this.comboStep=0;
+    this.comboTimer=Math.max(0,this.comboTimer-delta);this.specialCooldown=Math.max(0,this.specialCooldown-delta);this.shieldActive=Math.max(0,this.shieldActive-delta);this.shieldCooldown=Math.max(0,this.shieldCooldown-delta);this.dashCooldown=Math.max(0,this.dashCooldown-delta);this.dashTime=Math.max(0,this.dashTime-delta);if(this.comboTimer===0)this.comboStep=0;
+    if(dashPressed&&this.dashCooldown<=0){this.dashCooldown=820;this.dashTime=170;this.invulnerable=Math.max(this.invulnerable,240);this.setVelocityX(this.facing*520);this.scene.particleManager?.sparkles(this.x-this.facing*18,this.y+8,0xff8fc8,8);}
+    if(this.dashTime>0){this.setAccelerationX(0);this.setDragX(100);this.dashTrailTimer-=delta;if(this.dashTrailTimer<=0){this.dashTrailTimer=45;const trail=this.scene.add.image(this.x-this.facing*16,this.y,'paola-final',2).setScale(this.scaleX,this.scaleY).setFlipX(this.flipX).setTint(0xff8fc8).setAlpha(.24).setDepth(18);this.scene.tweens.add({targets:trail,alpha:0,x:trail.x-this.facing*18,duration:150,onComplete:()=>trail.destroy()});}}
     if(shieldPressed&&this.shieldCooldown<=0)this.activateLoveShield();if(this.shieldFx?.active){this.shieldFx.setPosition(this.x,this.y);this.shieldFx.setVisible(this.shieldActive>0);}
     this.scene.uiManager?.updateShield?.(this.shieldActive,this.shieldCooldown,this.shieldCooldownMax);
 
@@ -75,7 +78,9 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       this.jump();
     }
 
-    if (left && !right) {
+    if(this.dashTime>0){
+      this.setAccelerationX(0);this.setDragX(100);this.setMaxVelocity(560,700);
+    } else if (left && !right) {
       this.facing = -1;
       this.setAccelerationX(-1100); this.setDragX(1500); this.setMaxVelocity(run ? this.runSpeed : this.speed, 700);
     } else if (right && !left) {
@@ -96,7 +101,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       this.scene.particleManager?.burst(this.x - this.facing * 12, this.y + 22, 0xb99f91, 2, 28);
     }
 
-    if(meleePressed&&crouch&&!this.isGrounded&&!this.airSlamming){this.airSlamming=true;this.setVelocityY(760);this.scene.startAirSlam?.(this.x,this.y);}
+    if(meleePressed&&!this.isGrounded&&this.body.velocity.y>20&&!this.airSlamming){this.airSlamming=true;this.setVelocityY(760);this.scene.startAirSlam?.(this.x,this.y);}
     else if(meleePressed&&this.attackCooldown<=0){this.comboStep=this.comboTimer>0?(this.comboStep%3)+1:1;this.comboTimer=520;this.attackCooldown=this.comboStep===3?300:150;this.scene.meleeAttack?.(this.x,this.y,this.facing,this.comboStep);}
     if (attackPressed && this.attackCooldown <= 0) { this.attackCooldown = 330; this.scene.fireLove?.(this.x + this.facing * 31, this.y + 10, this.facing); }
     if((this.keys.X.isDown||this.keys.K.isDown)&&this.canChargeLove){this.loveCharge=Math.min(1100,this.loveCharge+delta);this.chargeFxTimer-=delta;if(this.chargeFxTimer<=0){this.chargeFxTimer=120;this.scene.particleManager?.sparkles(this.x,this.y,0xff72b8,3);if(this.loveCharge>650)this.setTint(0xff8fc8);}}

@@ -1,67 +1,37 @@
-export default class Enemy extends Phaser.Physics.Arcade.Sprite {
-  constructor(scene, x, y, config = {}) {
-    super(scene, x, y, `enemy-${config.type || 'pigeon'}`);
-    this.scene = scene;
-    this.type = config.type || 'pigeon';
-    this.speed = config.speed || 80;
-    this.direction = config.direction || 1;
-    this.health = config.health || 3;
-    this.minX = config.minX ?? x - 100;
-    this.maxX = config.maxX ?? x + 100;
-    this.damage = config.damage || 1;
-    this.miniBoss=!!config.miniBoss;this.displayName=config.name||null;this.runeGuardian=!!config.runeGuardian;
-    this.spawnX=x;this.safeSpawn={x,y};this.attackCooldown=400+Math.random()*500;
-    this.flying = ['pigeon', 'dive', 'magic','winged'].includes(this.type);
-    this.humanoid=['guard','guardian','assassin','soldier','archer','knight','mage','general'].includes(this.type);this.rangedCooldown=900+Math.random()*700;
-    this.setScale(this.type === 'general' ? 1.25 : this.humanoid ? 1.05 : 1.35);
-    scene.add.existing(this);
-    scene.physics.add.existing(this);
-    this.spriteRow={soldier:0,mage:1,knight:2,general:3}[this.type];
-    this.hasEnemySheet=this.spriteRow!==undefined&&scene.textures.exists('pigeon-enemies-v2');
-    if(this.hasEnemySheet){this.setTexture('pigeon-enemies-v2',this.spriteRow*6);this.setScale(this.type==='general'?.82:.66);}
-    if(this.humanoid){this.body.setSize(this.hasEnemySheet?42:34,this.hasEnemySheet?70:58);this.body.setOffset(this.hasEnemySheet?43:8,this.hasEnemySheet?43:10);}
-    this.setCollideWorldBounds(true);
-    this.setBounce(0.1);
-    if (this.body) {
-      this.body.setAllowGravity(!this.flying);
-    }
-    this.setDepth(8);
-    this.startY = y;
+const STATES=Object.freeze({IDLE:'IDLE',PATROL:'PATROL',DETECT:'DETECT',CHASE:'CHASE',REPOSITION:'REPOSITION',TELEGRAPH:'TELEGRAPH',ATTACK:'ATTACK',RECOVER:'RECOVER',HURT:'HURT',DEAD:'DEAD'});
+
+export default class Enemy extends Phaser.Physics.Arcade.Sprite{
+  constructor(scene,x,y,config={}){
+    super(scene,x,y,`enemy-${config.type||'pigeon'}`);this.scene=scene;this.type=config.type||'pigeon';this.speed=config.speed||80;this.direction=config.direction||1;this.health=config.health||3;this.maxHealth=this.health;this.minX=config.minX??x-100;this.maxX=config.maxX??x+100;this.damage=config.damage||1;this.miniBoss=!!config.miniBoss;this.displayName=config.name||null;this.runeGuardian=!!config.runeGuardian;this.spawnX=x;this.safeSpawn={x,y};this.startY=y;this.flying=['pigeon','dive','magic','winged'].includes(this.type);this.humanoid=['guard','guardian','assassin','soldier','archer','knight','mage','general'].includes(this.type);this.ranged=['archer','mage','magic'].includes(this.type);this.state=STATES.IDLE;this.stateTime=260+Math.random()*280;this.attackCooldown=650+Math.random()*500;this.damageActive=false;this.attackFx=null;this.attackSlot=false;this.diveTarget=null;this.generalMove=0;
+    scene.add.existing(this);scene.physics.add.existing(this);this.spriteRow={soldier:0,mage:1,knight:2,general:3}[this.type];this.hasEnemySheet=this.spriteRow!==undefined&&scene.textures.exists('pigeon-enemies-v2');if(this.hasEnemySheet){this.setTexture('pigeon-enemies-v2',this.spriteRow*6);this.setScale(this.type==='general'?.82:.66);}else this.setScale(this.type==='general'?1.25:this.humanoid?1.05:1.35);if(this.humanoid)this.body.setSize(this.hasEnemySheet?42:34,this.hasEnemySheet?70:58).setOffset(this.hasEnemySheet?43:8,this.hasEnemySheet?43:10);this.setCollideWorldBounds(true).setBounce(.05).setDepth(8);this.body.setAllowGravity(!this.flying);
   }
-
-  update(delta=16) {
-    if (!this.active || !this.body) return;
-    const player=this.scene.player,dist=player?player.x-this.x:9999,absDist=Math.abs(dist);this.attackCooldown=Math.max(0,this.attackCooldown-delta);
-    if(this.humanoid&&player){const ranged=this.type==='archer'||this.type==='mage',detect=this.type==='general'?520:350,idealMin=this.type==='mage'?250:this.type==='archer'?220:60,idealMax=this.type==='mage'?400:this.type==='archer'?350:idealMin;if(absDist<detect){this.direction=Math.sign(dist)||this.direction;if(ranged){this.body.setVelocityX(absDist<idealMin?-this.direction*this.speed*.7:absDist>idealMax?this.direction*this.speed*.75:0);this.rangedCooldown-=delta;if(this.rangedCooldown<=0){this.rangedCooldown=this.type==='mage'?1900:1450;this.rangedAttack(player);}}else if(absDist>65)this.body.setVelocityX(this.speed*this.direction*(this.type==='general'?1.65:this.type==='assassin'?1.9:(this.type==='knight'||this.type==='guardian')?0.82:1.25));else{this.body.setVelocityX(0);if(this.attackCooldown<=0){this.attackCooldown=this.type==='general'?700:this.type==='assassin'?520:950;this.meleeStrike(player);}}}else{const home=this.spawnX-this.x;if(Math.abs(home)>18){this.direction=Math.sign(home);this.body.setVelocityX(this.speed*.55*this.direction);}else this.body.setVelocityX(0);}}else this.body.setVelocityX(this.speed*this.direction);
-    if(this.humanoid&&this.body.velocity.x!==0){const ahead=this.x+Math.sign(this.body.velocity.x)*24;if(ahead<=this.minX||ahead>=this.maxX){this.direction*=-1;this.body.setVelocityX(Math.abs(this.body.velocity.x)*this.direction);}}
-    if (this.x < this.minX) {
-      this.x = this.minX;
-      this.direction = 1;
-    }
-    if (this.x > this.maxX) {
-      this.x = this.maxX;
-      this.direction = -1;
-    }
-    this.setFlipX(this.direction < 0);
-    if (this.flying) {this.body.setAllowGravity(false);this.body.setVelocityY(0);this.y=this.startY+Math.sin(this.scene.time.now/260+this.x)*8;this.setScale(Math.abs(this.scaleX)||1.35,1.25+Math.sin(this.scene.time.now/75)*.13);this.body.updateFromGameObject();this.telegraph=(this.telegraph||0)+delta;if(this.type==='dive'&&this.telegraph>1900){this.telegraph=0;this.setTint(0xff8fc8);this.scene.tweens.add({targets:this,y:this.y+28,duration:150,yoyo:true,onComplete:()=>this.active&&this.clearTint()});}} else if(this.humanoid){const base=this.hasEnemySheet?(this.type==='general'?.82:.66):(this.type==='general'?1.25:1.05),bob=Math.sin(this.scene.time.now/(Math.abs(this.body.velocity.x)>10?85:220));this.setScale(base*(1+bob*.025),base*(1-bob*.02));this.setAngle(bob*(this.type==='general'?1:2));if(this.hasEnemySheet&&!this.inAction)this.setFrame(this.spriteRow*6+(Math.abs(this.body.velocity.x)>10?1+Math.floor(this.scene.time.now/210)%2:0));}else if(this.type==='broken') this.setScale(1.2+Math.sin(this.scene.time.now/170)*.05);else if(this.type==='slime')this.setScale(1.25+Math.sin(this.scene.time.now/135)*.12,1.25-Math.sin(this.scene.time.now/135)*.09);
+  enter(state,duration=0){this.state=state;this.stateTime=duration;if(state!==STATES.ATTACK)this.damageActive=false;if(state===STATES.DEAD)this.releaseAttackSlot();}
+  acquireAttackSlot(){const slots=this.scene.directAttackers||(this.scene.directAttackers=new Set());if(this.attackSlot)return true;if(slots.size>=2)return false;slots.add(this);this.attackSlot=true;return true;}
+  releaseAttackSlot(){if(this.attackSlot)this.scene.directAttackers?.delete(this);this.attackSlot=false;}
+  canAct(){return this.active&&this.body?.enable&&this.visible&&this.alpha>=.45;}
+  update(delta=16){
+    if(!this.canAct()||this.state===STATES.DEAD)return;const player=this.scene.player;if(!player)return;this.stateTime-=delta;this.attackCooldown=Math.max(0,this.attackCooldown-delta);const dx=player.x-this.x,dist=Math.abs(dx);if(dx)this.direction=Math.sign(dx);this.setFlipX(this.direction<0);
+    if(this.state===STATES.HURT){this.setVelocityX(0);if(this.stateTime<=0)this.enter(STATES.RECOVER,240);return;}
+    if(this.state===STATES.TELEGRAPH||this.state===STATES.ATTACK||(!this.flying&&this.state===STATES.RECOVER)){if(this.stateTime<=0)this.advanceAction(player);return;}
+    if(this.flying){this.updateFlying(player,dist,delta);return;}
+    const detect=this.miniBoss?560:this.ranged?430:340;
+    if(dist>detect){this.enter(STATES.PATROL);this.patrol();}
+    else if(this.ranged){const ideal=this.type==='mage'?300:260;if(dist<ideal-55){this.enter(STATES.REPOSITION);this.setVelocityX(-this.direction*this.speed*.7);}else if(dist>ideal+70){this.enter(STATES.CHASE);this.setVelocityX(this.direction*this.speed*.7);}else{this.setVelocityX(0);if(this.attackCooldown<=0)this.beginTelegraph('ranged');}}
+    else if(dist>74){const factor=this.miniBoss?1.35:this.type==='assassin'?1.55:(this.type==='knight'||this.type==='guardian')?0.78:1.05;this.enter(STATES.CHASE);this.setVelocityX(this.direction*this.speed*factor);}
+    else if(this.attackCooldown<=0&&this.acquireAttackSlot())this.beginTelegraph(this.miniBoss?this.nextGeneralMove():'melee');else{this.enter(STATES.REPOSITION);this.setVelocityX(-this.direction*this.speed*.35);}
+    this.keepInPatrol();this.animateLocomotion();
   }
-
-  meleeStrike(player){if(!this.active||!player)return;this.inAction=true;if(this.hasEnemySheet)this.setFrame(this.spriteRow*6+3);this.scene.tweens.add({targets:this,x:this.x+this.direction*18,duration:100,yoyo:true});this.scene.time.delayedCall(110,()=>{if(this.active&&player.active&&Phaser.Math.Distance.Between(this.x,this.y,player.x,player.y)<92){const damaged=player.takeDamage(this.damage,this);if(damaged===false)this.setVelocityX(-this.direction*150);}this.inAction=false;});}
-
-  rangedAttack(player){if(!this.active||!this.visible||!this.body?.enable||this.alpha<.45)return;this.inAction=true;if(this.hasEnemySheet)this.setFrame(this.spriteRow*6+2);else this.setTint(this.type==='mage'?0xc774ff:0xffd277);const rune=this.scene.add.circle(this.x,this.y-12,this.type==='mage'?24:14,0x9c43c5,.12).setStrokeStyle(3,this.type==='mage'?0xe798ff:0xffd3e7,.8).setDepth(18);this.scene.tweens.add({targets:rune,angle:180,scale:1.25,duration:420});this.scene.time.delayedCall(420,()=>{if(!this.active||!this.visible||!this.body?.enable||this.alpha<.45){rune.destroy();this.inAction=false;return;}rune.destroy();this.clearTint();if(this.hasEnemySheet)this.setFrame(this.spriteRow*6+3);const orb=this.scene.add.image(this.x,this.y-12,this.type==='mage'?'enemy-magic-orb':'enemy-feather-shot').setName(this.type==='mage'?'magic-orb':'feather-shot').setDepth(19);this.scene.physics.add.existing(orb);orb.body.setAllowGravity(false);const angle=Phaser.Math.Angle.Between(this.x,this.y,player.x,player.y);orb.setRotation(angle);orb.body.setVelocity(Math.cos(angle)*260,Math.sin(angle)*260);const hit=this.scene.physics.add.overlap(player,orb,()=>{player.takeDamage(1,orb);hit.destroy();orb.destroy();});this.scene.time.delayedCall(2200,()=>{hit.active&&hit.destroy();orb.active&&orb.destroy();});this.scene.time.delayedCall(260,()=>this.active&&(this.inAction=false));});}
-
-  hit() {
-    this.health -= 1;
-    this.inAction=true;if(this.hasEnemySheet)this.setFrame(this.spriteRow*6+4);
-    this.scene.audioManager?.playSfx('enemyDown');
-    this.setTintFill(0xffffff);
-    this.scene.cameras.main.shake(45,.0025);this.scene.particleManager?.sparkles(this.x,this.y,0xff8fc8,6);this.scene.tweens.add({targets:this,x:this.x-this.direction*9,duration:55,yoyo:true});
-    this.scene.time.delayedCall(120, () => {if(this.active){this.clearTint();this.inAction=false;}});
-    if (this.health <= 0) {
-      this.scene.onRuneGuardianDefeated?.(this);
-      this.scene.particleManager?.burst(this.x, this.y, 0xffd7f6, 18, 200);
-      this.body.enable=false;if(this.hasEnemySheet)this.setFrame(this.spriteRow*6+5);this.scene.tweens.add({targets:this,y:this.y+18,angle:this.hasEnemySheet?0:90,alpha:0,duration:520,delay:180,onComplete:()=>this.disableBody(true,true)});
-      this.scene.addRose?.(1);
-    }
-  }
+  patrol(){if(this.x<=this.minX+3)this.direction=1;if(this.x>=this.maxX-3)this.direction=-1;this.setVelocityX(this.direction*this.speed*.45);}
+  keepInPatrol(){if(this.x<this.minX){this.x=this.minX;this.direction=1;}if(this.x>this.maxX){this.x=this.maxX;this.direction=-1;}}
+  nextGeneralMove(){return ['melee','charge','leap','heavy','summon'][this.generalMove++%5];}
+  beginTelegraph(kind){this.actionKind=kind;this.setVelocityX(0);const duration=kind==='heavy'?620:kind==='charge'?480:kind==='leap'?520:kind==='summon'?700:kind==='ranged'?520:kind==='dive'?560:360;this.enter(STATES.TELEGRAPH,duration);if(this.hasEnemySheet)this.setFrame(this.spriteRow*6+2);this.setTint(kind==='heavy'?0xffaa66:kind==='ranged'?0xd98cff:0xff9bbb);const symbol=kind==='ranged'?'✦':kind==='charge'?'➜':kind==='leap'?'⌃':kind==='summon'?'♢':kind==='dive'?'▼':'!';this.attackFx=this.scene.add.text(this.x,this.y-62,symbol,{fontFamily:'monospace',fontSize:kind==='heavy'?'30px':'22px',color:'#fff2b0',stroke:'#6d1f4c',strokeThickness:4}).setOrigin(.5).setDepth(30);this.scene.tweens.add({targets:this.attackFx,y:this.attackFx.y-8,scale:1.2,duration:180,yoyo:true,repeat:-1});}
+  advanceAction(player){if(this.state===STATES.TELEGRAPH){this.attackFx?.destroy();this.attackFx=null;this.clearTint();this.enter(STATES.ATTACK,this.actionKind==='charge'?380:this.actionKind==='leap'?480:this.actionKind==='dive'?620:this.actionKind==='heavy'?300:220);this.performAttack(player);return;}if(this.state===STATES.ATTACK){this.damageActive=false;this.enter(STATES.RECOVER,this.miniBoss?520:this.ranged?620:440);this.setVelocityX(0);return;}if(this.state===STATES.RECOVER){this.releaseAttackSlot();this.attackCooldown=this.miniBoss?620:this.type==='assassin'?720:1050;this.enter(STATES.REPOSITION,220);}}
+  performAttack(player){if(!this.canAct())return;if(this.actionKind==='ranged'){this.spawnProjectile(player);return;}if(this.actionKind==='summon'){this.summonHelpers();return;}if(this.actionKind==='dive'){this.performDive();return;}if(this.actionKind==='leap')this.setVelocity(this.direction*170,-330);else if(this.actionKind==='charge')this.setVelocityX(this.direction*320);else this.setVelocityX(this.direction*(this.actionKind==='heavy'?135:210));this.damageActive=true;if(this.hasEnemySheet)this.setFrame(this.spriteRow*6+3);}
+  updateFlying(player,dist,delta){this.body.setAllowGravity(false);if(this.state===STATES.RECOVER){this.damageActive=false;this.x=Phaser.Math.Linear(this.x,this.spawnX,.035);this.y=Phaser.Math.Linear(this.y,this.startY,.055);this.body.updateFromGameObject();if(this.stateTime<=0){this.releaseAttackSlot();this.attackCooldown=1050;this.enter(STATES.PATROL);}return;}this.y=this.startY+Math.sin(this.scene.time.now/420+this.spawnX*.01)*18;this.x+=this.direction*this.speed*.22*delta/1000;if(this.x<this.minX||this.x>this.maxX)this.direction*=-1;this.body.updateFromGameObject();if(dist<420&&this.attackCooldown<=0&&this.acquireAttackSlot()){this.diveTarget={x:player.x,y:player.y};this.beginTelegraph('dive');}}
+  performDive(){const target=this.diveTarget||this.scene.player,angle=Phaser.Math.Angle.Between(this.x,this.y,target.x,target.y);this.setVelocity(Math.cos(angle)*420,Math.sin(angle)*420);this.damageActive=true;}
+  spawnProjectile(player){const key=this.type==='mage'||this.type==='magic'?'enemy-magic-orb':'enemy-feather-shot',orb=this.scene.add.image(this.x+this.direction*22,this.y-12,key).setName(key).setDepth(19);this.scene.physics.add.existing(orb);orb.body.setAllowGravity(false);const angle=Phaser.Math.Angle.Between(orb.x,orb.y,player.x,player.y);orb.setRotation(angle);orb.body.setVelocity(Math.cos(angle)*270,Math.sin(angle)*270);const hit=this.scene.physics.add.overlap(player,orb,()=>{player.takeDamage(1,orb);hit.destroy();orb.destroy();});this.scene.time.delayedCall(2200,()=>{hit.active&&hit.destroy();orb.active&&orb.destroy();});}
+  summonHelpers(){const alive=this.scene.enemies?.getChildren().filter(e=>e.active&&e.summonedBy===this).length||0;for(let i=alive;i<2;i++){const helper=new this.constructor(this.scene,this.x+(i?90:-90),this.y-100,{type:'winged',health:2,minX:this.x-240,maxX:this.x+240,speed:105});helper.summonedBy=this;this.scene.enemies.add(helper);}}
+  animateLocomotion(){if(!this.humanoid)return;const base=this.hasEnemySheet?(this.miniBoss?0.82:0.66):(this.miniBoss?1.25:1.05),bob=Math.sin(this.scene.time.now/(Math.abs(this.body.velocity.x)>10?90:230));this.setScale(base*(1+bob*.02),base*(1-bob*.018));if(this.hasEnemySheet)this.setFrame(this.spriteRow*6+(Math.abs(this.body.velocity.x)>10?1+Math.floor(this.scene.time.now/210)%2:0));}
+  hit(amount=1,knockback=0){if(!this.canAct()||this.state===STATES.DEAD)return;this.health-=amount;this.releaseAttackSlot();this.enter(STATES.HURT,180);if(this.hasEnemySheet)this.setFrame(this.spriteRow*6+4);this.setTintFill(0xffffff);this.setVelocityX(knockback||-this.direction*120);this.scene.audioManager?.playSfx('enemyDown');this.scene.particleManager?.sparkles(this.x,this.y,0xff8fc8,7);this.scene.time.delayedCall(90,()=>this.active&&this.clearTint());if(this.health<=0)this.die();}
+  die(){this.enter(STATES.DEAD);this.attackFx?.destroy();this.scene.onRuneGuardianDefeated?.(this);this.scene.particleManager?.burst(this.x,this.y,0xffd7f6,18,200);this.body.enable=false;if(this.hasEnemySheet)this.setFrame(this.spriteRow*6+5);this.scene.tweens.add({targets:this,y:this.y+18,angle:this.hasEnemySheet?0:90,alpha:0,duration:480,delay:120,onComplete:()=>this.disableBody(true,true)});this.scene.addRose?.(1);}
 }
