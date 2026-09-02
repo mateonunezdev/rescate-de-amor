@@ -20,6 +20,7 @@ export default class BootScene extends Phaser.Scene {
     this.load.image('forest-remaster-atlas','world/forest-remaster/forest-props-atlas.png?v=20260830-intro-level1-01');
     this.load.image('forest-sky-parallax','world/forest-remaster/forest-sky-parallax.png?v=20260830-intro-level1-02');
     for(const theme of ['forest','garden','fortress','tower','palace'])this.load.image(`architecture-${theme}` ,`world/architecture-v2/${theme}-atlas-alpha.png?v=20260831-architecture-01`);
+    for(const name of ['forest','garden','fortress','tower','palace','tunnel'])this.load.image(`grounded-${name}`,`world/architecture-v2/grounded-${name}-v2.png?v=20260901-grounded-final-04`);
     this.load.image('paola-seated','characters/cinematic/paola-seated.png?v=20260830-dialogue-layout-04');
     this.load.image('mateo-seated','characters/cinematic/mateo-seated.png?v=20260830-dialogue-layout-04');
     this.load.on('loaderror',file=>console.error('[ASSET FINAL NO CARGADO]',file?.src||file?.key));
@@ -43,7 +44,7 @@ export default class BootScene extends Phaser.Scene {
   }
 
   create() {
-    const required=['paola-final','mateo-final','pecho-final','pigeon-enemies-v2','bg-romantic','bg-picnic','bg-forest','bg-garden','bg-castle','bg-boss','gothic-cage','environment-atlas','forest-remaster-atlas','forest-sky-parallax','paola-seated','mateo-seated',...['forest','garden','fortress','tower','palace'].map(theme=>`architecture-${theme}`)];
+    const required=['paola-final','mateo-final','pecho-final','pigeon-enemies-v2','bg-romantic','bg-picnic','bg-forest','bg-garden','bg-castle','bg-boss','gothic-cage','environment-atlas','forest-remaster-atlas','forest-sky-parallax','paola-seated','mateo-seated',...['forest','garden','fortress','tower','palace'].map(theme=>`architecture-${theme}`),...['forest','garden','fortress','tower','palace','tunnel'].map(name=>`grounded-${name}`)];
     const missing=required.filter(key=>!this.textures.exists(key));
     if(missing.length)throw new Error(`Assets visuales obligatorios ausentes: ${missing.join(', ')}`);
     const forest=this.textures.get('forest-remaster-atlas'),frames={treeTall:[0,0,220,330],treeWide:[220,0,285,330],treeTwisted:[500,0,210,330],treeFlowers:[700,0,205,330],treeRoots:[900,0,205,330],treeMemory:[1085,0,250,330],treeLights:[1320,0,216,330],rootTunnel:[0,325,470,215],rootArch:[470,325,310,215],fallenLog:[1180,330,356,210],rootPlatform:[0,535,365,195],rockPlatform:[365,535,375,195],ruinPlatform:[740,535,390,195],brokenBridge:[1115,535,421,195],rootArena:[0,720,420,304],memoryGate:[420,700,350,324],memoryDoorLeaf:[545,790,100,205],memoryTree:[760,690,350,334],gardenPortal:[1100,690,436,334]};Object.entries(frames).forEach(([name,[x,y,w,h]])=>{if(!forest.has(name))forest.add(name,0,x,y,w,h);});

@@ -14,6 +14,8 @@ const ARCHITECTURE={
   palace:{groundY:410,platformAY:405,platformBY:390,bridgeY:368},
 };
 
+const GROUNDED_SURFACE_Y={forest:160,garden:166,fortress:168,tower:196,palace:174};
+
 /** A single declarative definition creates both visible tiles and its collider. */
 export default class WorldBuilder{
   constructor(scene,data){this.scene=scene;this.data=data;this.theme=THEMES[data.theme]||THEMES.forest;this.surfaces=new Map();this.doors=new Map();}
@@ -115,15 +117,11 @@ export default class WorldBuilder{
         art.push(piece);
       }
     }else{
-      const isBridge=def.visual==='bridge';
-      const frame=isBridge?'bridge':def.supportType==='wall-anchor'?'platformB':'platformA';
-      const surfaceY=spec[`${frame}Y`]??spec.platformAY;
-      const scale=Phaser.Math.Clamp(width/410,.46,.82);
-      const piece=s.add.image(center,top,texture,frame)
-        .setOrigin(.5,surfaceY/512).setScale(scale)
-        .setDepth(12).setFlipX((def.id.length%2)===0);
+      const surfaceY=GROUNDED_SURFACE_Y[this.data.theme],scale=Phaser.Math.Clamp((width+36)/341,.58,.92);
+      const piece=s.add.image(center,top,`grounded-${this.data.theme}`)
+        .setOrigin(.5,surfaceY/768).setScale(scale)
+        .setDepth(11).setFlipX((def.id.length%2)===0);
       art.push(piece);
-      this.createGroundedSupports(def,{left,right,center,top,width,art});
     }
 
     const colliderWidth=def.colliderWidth,
@@ -249,7 +247,8 @@ export default class WorldBuilder{
     let art,leaf,frame=null;
 
     if(arena){
-      leaf=s.add.image(def.x,def.y+4,key).setOrigin(.5,1).setDepth(26);
+      leaf=s.add.image(def.x,def.y+8,`architecture-${this.data.theme}`,'gate')
+        .setOrigin(.5,1).setScale(.48).setDepth(26);
       art=leaf;
     }else if(forestPuzzle){
       frame=s.add.image(def.x,def.y+18,'forest-remaster-atlas','memoryGate')
@@ -258,9 +257,8 @@ export default class WorldBuilder{
         .setOrigin(.5,1).setScale(.86).setDepth(26);
       art=frame;
     }else{
-      frame=s.add.image(def.x,def.y+70,`architecture-${this.data.theme}`,'landmark')
-        .setOrigin(.5,1).setScale(.72).setDepth(24);
-      leaf=s.add.image(def.x,def.y+4,key).setOrigin(.5,1).setDepth(26);
+      leaf=s.add.image(def.x,def.y+8,`architecture-${this.data.theme}`,'gate')
+        .setOrigin(.5,1).setScale(.58).setDepth(26);
       art=leaf;
     }
 
@@ -317,16 +315,15 @@ export default class WorldBuilder{
     s.add.image(right-95,648,'forest-remaster-atlas','rootArch')
       .setOrigin(.5,1).setScale(.92).setFlipX(true).setDepth(17);
 
-    for(const x of [3440,3820,4200]){
-      s.add.image(x,648,'forest-remaster-atlas','rootTunnel')
-        .setOrigin(.5,1).setScale(.92).setDepth(15);
-    }
+    s.add.image((left+right)/2,648,'grounded-tunnel')
+      .setOrigin(.5,1).setScale(1.34).setDepth(15);
+    s.add.image(left+370,648,'forest-remaster-atlas','rootTunnel')
+      .setOrigin(.5,1).setScale(.86).setDepth(14);
+    s.add.image(right-370,648,'forest-remaster-atlas','rootTunnel')
+      .setOrigin(.5,1).setScale(.82).setFlipX(true).setDepth(14);
 
     this.tunnelCeiling=this.createStaticSurfaceBody((left+right)/2,caveTop,right-left,'tunnel-ceiling');
     this.tunnelStructure={left,right,top:caveTop,ceiling:this.tunnelCeiling};
-
-    s.add.image(2870,648,'architecture-forest','bridge')
-      .setOrigin(.5,1).setScale(.78).setDepth(13);
 
     this.memoryTree=s.add.image(6700,648,'forest-remaster-atlas','memoryTree')
       .setOrigin(.5,1).setScale(1.2).setAlpha(.24).setDepth(14);
