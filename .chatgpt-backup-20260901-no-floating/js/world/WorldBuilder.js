@@ -52,47 +52,50 @@ export default class WorldBuilder{
     const key=`world-depth-${theme}`;
     if(!s.textures.exists(key)){
       const g=s.add.graphics(),night=theme==='forest'||theme==='fortress'||theme==='tower';
-      const base=night?0x12162f:0x48243e;
-      g.fillStyle(base,1).fillRect(0,0,1280,720);
+      const top=night?0x10152d:0x3d1f39;
+      const mid=night?0x1d2544:0x59304b;
+      const low=night?0x2b3554:0x72405d;
 
-      g.fillStyle(night?0x252f4d:0x68405a,.42);
-      for(let x=-180;x<1450;x+=250){
-        const peak=260+Math.abs((x*7)%210);
-        g.fillTriangle(x,760,x+135,peak,x+315,760);
+      g.fillStyle(top,1).fillRect(0,0,1280,720);
+      g.fillStyle(mid,.55).fillRect(0,220,1280,500);
+      g.fillStyle(low,.28).fillRect(0,390,1280,330);
+
+      g.fillStyle(night?0x33405f:0x87516f,.32);
+      for(let x=-80;x<1360;x+=230){
+        const peak=300+(x%310);
+        g.fillTriangle(x,650,x+120,peak,x+280,650);
       }
-
-      g.fillStyle(night?0x1a2139:0x553249,.38);
-      for(let x=-120;x<1450;x+=190){
-        const h=120+Math.abs((x*3)%110);
-        g.fillTriangle(x,760,x+95,760-h,x+220,760);
-      }
-
       g.generateTexture(key,1280,720);
       g.destroy();
     }
 
     s.add.image(640,360,key)
-      .setDisplaySize(1280,720).setScrollFactor(0).setDepth(-42);
+      .setDisplaySize(1280,720)
+      .setScrollFactor(0)
+      .setDepth(-42);
 
     const scenic={
-      garden:['bg-garden',0x7c6079,.24],
-      fortress:['bg-castle',0x505a70,.22],
-      tower:['bg-boss',0x514264,.21],
-      palace:['bg-castle',0x765466,.22],
+      garden:['bg-garden',0x8b6784,.30],
+      fortress:['bg-castle',0x59627a,.27],
+      tower:['bg-boss',0x55456d,.25],
+      palace:['bg-castle',0x8b6473,.27],
     }[theme];
 
     if(scenic&&s.textures.exists(scenic[0])){
       s.add.image(640,360,scenic[0])
-        .setDisplaySize(1280,720).setScrollFactor(0).setDepth(-40)
-        .setTint(scenic[1]).setAlpha(scenic[2]);
+        .setDisplaySize(1280,720)
+        .setScrollFactor(0)
+        .setDepth(-40)
+        .setTint(scenic[1])
+        .setAlpha(scenic[2]);
     }
 
     if(this.isLevel1Forest()){
       const frames=['treeTall','treeWide','treeTwisted','treeRoots'];
       for(let x=120;x<d.width;x+=430){
         s.add.image(x,610,'forest-remaster-atlas',frames[Math.floor(x/430)%frames.length])
-          .setOrigin(.5,1).setScale(.78).setTint(0x202f48)
-          .setAlpha(.34).setScrollFactor(.16).setDepth(-20);
+          .setOrigin(.5,1).setScale(.78).setTint(0x202f48).setAlpha(.38)
+          .setScrollFactor(.16).setDepth(-20);
       }
     }
   }
@@ -107,11 +110,14 @@ export default class WorldBuilder{
       const count=Math.max(1,Math.ceil(width/visualStep));
       const scale=this.data.theme==='forest'?.86:.82;
       const span=width/count;
+
       for(let i=0;i<count;i++){
         const px=left+span*(i+.5);
         const piece=s.add.image(px,top,texture,'ground')
-          .setOrigin(.5,spec.groundY/512).setScale(scale)
-          .setDepth(10).setFlipX(i%2===1);
+          .setOrigin(.5,spec.groundY/512)
+          .setScale(scale)
+          .setDepth(10)
+          .setFlipX(i%2===1);
         art.push(piece);
       }
     }else{
@@ -119,57 +125,82 @@ export default class WorldBuilder{
       const frame=isBridge?'bridge':def.supportType==='wall-anchor'?'platformB':'platformA';
       const surfaceY=spec[`${frame}Y`]??spec.platformAY;
       const scale=Phaser.Math.Clamp(width/410,.46,.82);
+
       const piece=s.add.image(center,top,texture,frame)
-        .setOrigin(.5,surfaceY/512).setScale(scale)
-        .setDepth(12).setFlipX((def.id.length%2)===0);
+        .setOrigin(.5,surfaceY/512)
+        .setScale(scale)
+        .setDepth(12)
+        .setFlipX((def.id.length%2)===0);
       art.push(piece);
-      this.createGroundedSupports(def,{left,right,center,top,width,art});
+
+      this.createStructuralSupports(def,{left,right,center,top,width,art,texture});
     }
 
     const colliderWidth=def.colliderWidth,
       body=this.createStaticSurfaceBody(center+def.colliderOffset,top,colliderWidth,def.id),
       record={...def,left,right,x:center,top,width,body,bodies:[body],art,structuralArt:true};
+
     this.surfaces.set(def.id,record);
     return record;
   }
 
-  createGroundedSupports(def,ctx){
-    const s=this.scene,theme=this.data.theme,{left,right,center,top,width,art}=ctx;
+  createStructuralSupports(def,ctx){
+    const s=this.scene,theme=this.data.theme,{left,right,center,top,width,art,texture}=ctx;
     const floorY=this.findStructuralFloor(top,center);
-    const gap=floorY-top;
-    if(gap<58)return;
+    const gap=Math.max(0,floorY-top);
 
-    const bridge=def.visual==='bridge'||/bridge|log|walk/i.test(def.id);
-    const supportXs=bridge&&width>145
-      ? [left+Math.min(45,width*.22),right-Math.min(45,width*.22)]
-      : width>260?[center-width*.27,center+width*.27]:[center];
+    if(gap<70)return;
 
-    if(theme==='forest'){
-      for(const sx of supportXs){
-        const frame=(Math.floor(sx/100)%2)?'rootPlatform':'rockPlatform';
-        const rawH=195;
-        const targetH=Math.min(Math.max(gap+55,150),360);
-        const scale=targetH/rawH;
-        const root=s.add.image(sx,floorY+42,'forest-remaster-atlas',frame)
-          .setOrigin(.5,1).setScale(scale).setDepth(9).setAlpha(.98);
-        if(Math.floor(sx/70)%2)root.setFlipX(true);
-        art.push(root);
-      }
-      return;
-    }
+    const isBridge=def.visual==='bridge'||/bridge|log|walk/i.test(def.id);
+    const points=isBridge&&width>150
+      ? [left+Math.min(52,width*.24),right-Math.min(52,width*.24)]
+      : [center];
 
-    const key=`world-support-${theme}`;
-    for(const sx of supportXs){
-      const step=54;
-      const start=top+18;
-      const end=floorY+34;
-      for(let y=start;y<end;y+=step){
-        const remaining=end-y;
-        const sy=y+Math.min(step,remaining)/2;
-        const seg=s.add.image(sx,sy,key).setDepth(9).setAlpha(.96);
-        seg.displayHeight=Math.min(step+10,remaining+10);
-        seg.displayWidth=theme==='fortress'?30:theme==='palace'?28:24;
-        art.push(seg);
+    for(const px of points){
+      if(theme==='forest'){
+        const usable=Math.min(gap+30,420);
+        const scale=Phaser.Math.Clamp(usable/480,.42,.86);
+        const support=s.add.image(px,floorY+12,'architecture-forest','landmark')
+          .setOrigin(.5,1).setScale(scale).setDepth(9).setAlpha(.90);
+        if(Math.floor(px/80)%2)support.setFlipX(true);
+        art.push(support);
+      }else if(theme==='garden'){
+        const segments=Math.max(1,Math.ceil(gap/250));
+        for(let i=0;i<segments;i++){
+          const sy=floorY-i*205;
+          const support=s.add.image(px,sy,texture,'landmark')
+            .setOrigin(.5,1).setScale(.45).setDepth(8).setAlpha(.82);
+          if((i+Math.floor(px/100))%2)support.setFlipX(true);
+          art.push(support);
+        }
+      }else if(theme==='fortress'){
+        const segments=Math.max(1,Math.ceil(gap/230));
+        for(let i=0;i<segments;i++){
+          const sy=floorY-i*205;
+          const support=s.add.image(px,sy,texture,'landmark')
+            .setOrigin(.5,1).setScale(.50).setDepth(8).setAlpha(.88);
+          art.push(support);
+        }
+      }else if(theme==='tower'){
+        const wall=s.add.image(px,floorY+18,texture,'landmark')
+          .setOrigin(.5,1)
+          .setScale(Phaser.Math.Clamp(gap/500,.48,.92))
+          .setDepth(7).setAlpha(.84);
+        art.push(wall);
+
+        const bracket=s.add.image(center,top+10,texture,'platformB')
+          .setOrigin(.5,.15).setScale(Phaser.Math.Clamp(width/600,.34,.58))
+          .setDepth(10).setAlpha(.88);
+        art.push(bracket);
+      }else if(theme==='palace'){
+        const segments=Math.max(1,Math.ceil(gap/250));
+        for(let i=0;i<segments;i++){
+          const sy=floorY-i*210;
+          const support=s.add.image(px,sy,texture,'landmark')
+            .setOrigin(.5,1).setScale(.50).setDepth(8).setAlpha(.88);
+          if((i+Math.floor(px/120))%2)support.setFlipX(true);
+          art.push(support);
+        }
       }
     }
   }
@@ -180,95 +211,10 @@ export default class WorldBuilder{
   createStaticSurfaceBody(x,top,width,id){const body=this.scene.add.rectangle(x,top+12,width,24,0,0).setVisible(false).setName(`surface:${id}`);this.scene.physics.add.existing(body,true);this.scene.solids.add(body);return body;}
 
   createDoor(def){
-    const s=this.scene,c=this.theme,w=def.width||104,h=def.height||230,
-      arena=def.kind==='arena',
-      key=`world-door-${this.data.theme}-${def.kind||'puzzle'}`,
-      frameKey=`world-door-frame-${this.data.theme}-${w}-${h}`;
-
-    if(!s.textures.exists(key)){
-      const g=s.add.graphics();
-      if(arena){
-        if(this.data.theme==='forest'){
-          g.fillStyle(0x291a2a,1).fillRect(10,0,w-20,h);
-          g.lineStyle(8,0x5a3d32,1);
-          for(let y=10;y<h;y+=30){
-            g.lineBetween(4,y,w-4,Math.min(h,y+26));
-            g.lineBetween(w-4,y,4,Math.min(h,y+26));
-          }
-          g.fillStyle(0x31503a,1);
-          for(let y=12;y<h;y+=25){
-            g.fillCircle(8,y,7);g.fillCircle(w-8,y+8,7);
-          }
-          g.fillStyle(0xff6ea9,1);
-          for(let y=24;y<h-20;y+=48)g.fillCircle(w/2,y,4);
-        }else if(this.data.theme==='garden'){
-          g.fillStyle(0x315a3f,1).fillRect(7,0,w-14,h);
-          g.fillStyle(0x65965b,1);
-          for(let y=8;y<h;y+=22)for(let x=12;x<w-8;x+=20)g.fillCircle(x,y,11);
-          g.fillStyle(0xe84e88,1);
-          for(let y=18;y<h;y+=38)g.fillCircle(w/2,y,5);
-        }else if(this.data.theme==='fortress'){
-          g.fillStyle(0x252733,1).fillRect(0,0,w,h);
-          g.fillStyle(0x8f98a3,1);
-          for(let x=8;x<w;x+=15)g.fillRect(x,0,8,h);
-          g.fillRect(0,20,w,7).fillRect(0,h-28,w,7);
-        }else if(this.data.theme==='tower'){
-          g.fillStyle(0x342743,.92).fillRect(5,0,w-10,h);
-          g.lineStyle(5,0xff5bab,.95);
-          for(let y=4;y<h;y+=20)g.lineBetween(3,y,w-3,y+10);
-          g.fillStyle(0xe0a5f0,1).fillCircle(w/2,20,9).fillCircle(w/2,h-20,9);
-        }else{
-          g.fillStyle(0x3b2734,1).fillRect(0,0,w,h);
-          g.fillStyle(0xb08369,1).fillRect(7,7,w-14,h-7);
-          g.fillStyle(0xd39a43,1)
-            .fillRect(w/2-4,8,8,h-16)
-            .fillRect(9,35,w-18,6)
-            .fillRect(9,h-45,w-18,6);
-        }
-      }else{
-        g.fillStyle(c.dark,1).fillRect(0,0,w,h);
-        g.fillStyle(c.base,1).fillRect(8,8,w-16,h-8);
-        g.fillStyle(c.detail,1);
-        for(let y=28;y<h-20;y+=28)g.fillRect(16,y,w-32,7);
-        g.fillStyle(c.accent,1).fillCircle(w/2,52,14);
-        g.fillStyle(0xffe1a0,1).fillCircle(w/2,52,5);
-      }
-      g.generateTexture(key,w,h);g.destroy();
-    }
-
-    if(!arena&&!s.textures.exists(frameKey)){
-      const f=s.add.graphics(),fw=w+82;
-      f.fillStyle(c.dark,1).fillRect(0,0,24,h).fillRect(fw-24,0,24,h).fillRect(0,0,fw,28);
-      f.fillStyle(c.base,1).fillRect(5,0,14,h).fillRect(fw-19,0,14,h).fillRect(5,5,fw-10,15);
-      f.fillStyle(c.light,1).fillRect(7,0,4,h).fillRect(fw-11,0,4,h);
-      f.fillStyle(c.accent,.7).fillRect(0,24,fw,5);
-      f.generateTexture(frameKey,fw,h);f.destroy();
-    }
-
-    const forestPuzzle=this.isLevel1Forest()&&def.kind==='puzzle';
-    let art,leaf,frame=null;
-
-    if(arena){
-      leaf=s.add.image(def.x,def.y+4,key).setOrigin(.5,1).setDepth(26);
-      art=leaf;
-    }else if(forestPuzzle){
-      frame=s.add.image(def.x,def.y+18,'forest-remaster-atlas','memoryGate')
-        .setOrigin(.5,1).setScale(.86).setDepth(25);
-      leaf=s.add.image(def.x,def.y+13,'forest-remaster-atlas','memoryDoorLeaf')
-        .setOrigin(.5,1).setScale(.86).setDepth(26);
-      art=frame;
-    }else{
-      frame=s.add.image(def.x,def.y+70,`architecture-${this.data.theme}`,'landmark')
-        .setOrigin(.5,1).setScale(.72).setDepth(24);
-      leaf=s.add.image(def.x,def.y+4,key).setOrigin(.5,1).setDepth(26);
-      art=leaf;
-    }
-
-    const body=s.add.rectangle(def.x,def.y-h/2,w-26,h,0,0).setVisible(false);
-    s.physics.add.existing(body,true);s.solids.add(body);
-    const door={...def,art,leaf,frame,body,x:def.x,y:def.y,forestPuzzle};
-    this.doors.set(def.id,door);
-    return door;
+    const s=this.scene,c=this.theme,w=def.width||104,h=def.height||230,arena=def.kind==='arena',key=`world-door-${this.data.theme}-${def.kind||'puzzle'}`,frameKey=`world-door-frame-${this.data.theme}-${w}-${h}`;
+    if(!s.textures.exists(key)){const g=s.add.graphics();if(arena){if(this.data.theme==='garden'){g.fillStyle(0x315a3f,1).fillRect(7,0,w-14,h);g.fillStyle(0x65965b,1);for(let y=8;y<h;y+=22)for(let x=12;x<w-8;x+=20)g.fillCircle(x,y,12);g.fillStyle(0xe84e88,1);for(let y=18;y<h;y+=38)g.fillCircle(w/2+(y%3-1)*20,y,5);}else if(this.data.theme==='fortress'){g.fillStyle(0x252733,1).fillRect(0,0,w,16);for(let x=8;x<w;x+=15)g.fillRect(x,0,8,h);g.fillStyle(0x8f98a3,1).fillRect(0,22,w,7).fillRect(0,h-30,w,7);}else if(this.data.theme==='tower'){g.fillStyle(0x4b365e,.82).fillRect(5,0,w-10,h);g.lineStyle(5,0xff5bab,.95);for(let y=4;y<h;y+=20)g.lineBetween(3,y,w-3,y+10);g.fillStyle(0xe0a5f0,1).fillCircle(w/2,20,10).fillCircle(w/2,h-20,10);}else{g.fillStyle(0x3b2734,1).fillRect(0,0,w,h);g.fillStyle(0xb08369,1).fillRect(7,7,w-14,h-7);g.fillStyle(0xd39a43,1).fillRect(w/2-4,8,8,h-16).fillRect(9,35,w-18,6).fillRect(9,h-45,w-18,6);}}else{g.fillStyle(c.dark,1).fillRect(0,0,w,h);g.fillStyle(c.base,1).fillRect(8,8,w-16,h-8);g.fillStyle(c.detail,1);for(let y=28;y<h-20;y+=28)g.fillRect(16,y,w-32,7);g.fillStyle(c.accent,1).fillCircle(w/2,52,14);g.fillStyle(0xffe1a0,1).fillCircle(w/2,52,5);}g.generateTexture(key,w,h);g.destroy();}
+    if(!arena&&!s.textures.exists(frameKey)){const f=s.add.graphics(),fw=w+82;f.fillStyle(c.dark,1).fillRect(0,0,24,h).fillRect(fw-24,0,24,h).fillRect(0,0,fw,28);f.fillStyle(c.base,1).fillRect(5,0,14,h).fillRect(fw-19,0,14,h).fillRect(5,5,fw-10,15);f.fillStyle(c.light,1).fillRect(7,0,4,h).fillRect(fw-11,0,4,h);f.fillStyle(c.accent,.7).fillRect(0,24,fw,5);f.generateTexture(frameKey,fw,h);f.destroy();}
+    const forestPuzzle=this.isLevel1Forest()&&def.kind==='puzzle';let art,leaf,frame=null;if(arena){leaf=s.add.image(def.x,def.y,`architecture-${this.data.theme}`,'gate').setOrigin(.5,1).setScale(.58).setDepth(26);art=leaf;}else if(forestPuzzle){frame=s.add.image(def.x,def.y,'forest-remaster-atlas','memoryGate').setOrigin(.5,1).setScale(.86).setDepth(25);leaf=s.add.image(def.x,def.y-5,'forest-remaster-atlas','memoryDoorLeaf').setOrigin(.5,1).setScale(.86).setDepth(26);art=frame;}else{frame=s.add.image(def.x,def.y,`architecture-${this.data.theme}`,'landmark').setOrigin(.5,1).setScale(.72).setDepth(24);leaf=s.add.image(def.x,def.y,key).setOrigin(.5,1).setDepth(26);art=leaf;}const body=s.add.rectangle(def.x,def.y-h/2,w-26,h,0,0).setVisible(false);s.physics.add.existing(body,true);s.solids.add(body);const door={...def,art,leaf,frame,body,x:def.x,y:def.y,forestPuzzle};this.doors.set(def.id,door);return door;
   }
 
   createDecoration(def){const s=this.scene;if(def.type==='light'){const mote=s.add.image(def.x,def.y,'collectible-star').setScale(.35).setTint(this.theme.accent).setAlpha(.55).setDepth(def.front?18:4);s.tweens.add({targets:mote,y:def.y-18,x:def.x+12,alpha:.15,duration:1300+(def.x%700),yoyo:true,repeat:-1});}else if(def.type==='column'){if(this.isLevel1Forest())return;for(let y=def.y;y<def.bottom;y+=64)s.add.image(def.x,y,`world-support-${this.data.theme}`).setDepth(def.front?18:5).setAlpha(def.front?.9:.55);}else if(def.type==='banner'){s.add.image(def.x,def.y,`world-banner-${this.data.theme}`).setOrigin(.5,0).setDepth(5).setAlpha(.72);}}
@@ -281,10 +227,10 @@ export default class WorldBuilder{
       let i=0;
       for(const surface of this.surfaces.values()){
         if(surface.kind!=='ground')continue;
-        for(let x=surface.left+210;x<surface.right-120;x+=520){
+        for(let x=surface.left+170;x<surface.right-90;x+=345){
           const frame=variants[i++%variants.length];
-          const art=s.add.image(x,surface.top+16,'forest-remaster-atlas',frame)
-            .setOrigin(.5,1).setDepth(i%4===0?16:4).setScale(.54+(i%2)*.05);
+          const art=s.add.image(x,surface.top+8,'forest-remaster-atlas',frame)
+            .setOrigin(.5,1).setDepth(i%4===0?16:4).setScale(.60+(i%2)*.07);
           if(i%2)art.setFlipX(true);
         }
       }
@@ -292,16 +238,20 @@ export default class WorldBuilder{
     }
 
     const texture=`architecture-${theme}`;
-    const grounds=[...this.surfaces.values()].filter(x=>x.kind==='ground');
-    grounds.forEach((surface,i)=>{
-      const x=(surface.left+surface.right)/2;
-      if(surface.width<700)return;
-      const art=s.add.image(x,surface.top+55,texture,'landmark')
-        .setOrigin(.5,1)
-        .setScale(theme==='fortress'?.34:theme==='palace'?.36:.32)
-        .setDepth(3).setAlpha(.28);
-      if(i%2)art.setFlipX(true);
-    });
+    const spacing={garden:760,fortress:720,tower:620,palace:780}[theme]||760;
+    let n=0;
+    for(const surface of this.surfaces.values()){
+      if(surface.kind!=='ground')continue;
+      for(let x=surface.left+spacing*.45;x<surface.right-spacing*.2;x+=spacing){
+        const frame=n++%3===0?'gate':'landmark';
+        const scale=theme==='garden'?.52:theme==='fortress'?.58:theme==='palace'?.58:.55;
+        const art=s.add.image(x,surface.top+8,texture,frame)
+          .setOrigin(.5,1).setScale(scale).setDepth(4).setAlpha(.68);
+        if(n%2)art.setFlipX(true);
+      }
+    }
+
+    // Los soportes de plataformas se generan en createStructuralSupports(); no duplicarlos aquí.
   }
 
   createForestArchitecture(){

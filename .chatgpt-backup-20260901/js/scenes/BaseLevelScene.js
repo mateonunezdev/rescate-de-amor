@@ -7,7 +7,7 @@ import ParticleManager from '../systems/ParticleManager.js';
 import SaveManager from '../systems/SaveManager.js';
 import { gameState } from '../config.js';
 import { TextureFactory } from '../utils/TextureFactory.js?v=20260830-structural-real-05';
-import WorldBuilder from '../world/WorldBuilder.js?v=20260901-no-floating-structures-03';
+import WorldBuilder from '../world/WorldBuilder.js?v=20260831-architecture-remaster-05';
 import { createMateoCageRig } from '../utils/CageRig.js?v=20260831-intro-world-repair-02';
 
 const MEMORY = {
@@ -96,67 +96,9 @@ export default class BaseLevelScene extends Phaser.Scene {
 
   openPuzzleDoor(message){if(this.puzzleSolved)return;this.puzzleSolved=true;const door=this.puzzleDoor;this.worldBuilder.openDoor(door);if(door?.rune)this.tweens.add({targets:[door.rune,door.nameText],alpha:0,y:'-=130',duration:850});this.audioManager.playSfx('checkpoint');this.particleManager.burst(door.x,door.y-100,0xff73b6,34,260);this.uiManager.showDialogueBubble('PAOLA',message,{x:640,y:430,duration:1900,width:590});}
 
-  makeCombatArenas(){
-    const configs=this.dataDef.arenas||(this.dataDef.arena?[this.dataDef.arena]:[]);
-    if(!configs.length)return;
-
-    const makeGate=(x,id)=>{
-      const floor=[...this.worldBuilder.surfaces.values()]
-        .filter(s=>x>=s.left&&x<=s.right).sort((a,b)=>b.top-a.top)[0],
-        gate=this.worldBuilder.createDoor({id,kind:'arena',x,y:floor?.top??648,width:76,height:210});
-      gate.visualParts=[gate.frame,gate.leaf||gate.art].filter(Boolean);
-      gate.visualParts.forEach(part=>part.setVisible(false));
-      gate.body.body.enable=false;
-      return gate;
-    };
-
-    this.combatArenas=configs.map((cfg,i)=>({
-      ...cfg,started:false,cleared:false,
-      left:makeGate(cfg.start,`arena-${i}-left`),
-      right:makeGate(cfg.end,`arena-${i}-right`)
-    }));
-
-    this.arenaHud=this.add.text(this.scale.width-34,78,'',{
-      fontFamily:'monospace',fontSize:'13px',color:'#fff1c1',
-      backgroundColor:'#24152ce8',padding:{x:9,y:5},
-      stroke:'#1b0919',strokeThickness:2
-    }).setOrigin(1,.5).setScrollFactor(0).setDepth(1150).setVisible(false);
-  }
-
-  startCombatArena(a){
-    if(!a||a.started)return;
-    a.started=true;
-    [a.left,a.right].forEach(g=>{
-      g.visualParts.forEach(part=>part.setVisible(true).setAlpha(.92));
-      g.body.body.enable=true;g.body.body.updateFromGameObject();
-      g.projectileCollider=this.physics.add.collider(this.projectiles,g.body,(first,second)=>{
-        const shot=first===g.body?second:first;
-        if(shot&&shot!==g.body)shot.destroy();
-      });
-    });
-    this.cameras.main.shake(100,.002);
-    this.uiManager.showMessage(a.message||'EL CAMINO SE HA CERRADO','#ffe2a0',1350);
-    this.updateCombatArena(a);
-  }
-
-  updateCombatArena(a){
-    if(!a?.started||a.cleared)return;
-    const remaining=this.enemies.getChildren().filter(e=>e.active&&e.x>a.start&&e.x<a.end);
-    this.arenaHud.setVisible(true).setText(`⚔ GUARDIANES · ${remaining.length}`);
-    if(remaining.length)return;
-
-    a.cleared=true;
-    this.arenaHud.setText('✦ CAMINO LIBRE').setColor('#bfffc9');
-    [a.left,a.right].forEach((g,i)=>{
-      g.body.body.enable=false;
-      this.tweens.add({
-        targets:g.visualParts,alpha:0,y:'-=45',duration:650,delay:i*90,
-        onComplete:()=>g.visualParts.forEach(part=>part.setVisible(false))
-      });
-    });
-    this.time.delayedCall(1050,()=>this.arenaHud.setVisible(false).setColor('#fff1c1'));
-    this.audioManager.playSfx('checkpoint');
-  }
+  makeCombatArenas(){const configs=this.dataDef.arenas||(this.dataDef.arena?[this.dataDef.arena]:[]);if(!configs.length)return;const makeGate=(x,id)=>{const floor=[...this.worldBuilder.surfaces.values()].filter(s=>x>=s.left&&x<=s.right).sort((a,b)=>b.top-a.top)[0],gate=this.worldBuilder.createDoor({id,kind:'arena',x,y:floor?.top??648,width:76,height:210});gate.visualParts=[gate.frame,gate.leaf||gate.art].filter(Boolean);gate.visualParts.forEach(part=>part.setVisible(false));gate.body.body.enable=false;return gate;};this.combatArenas=configs.map((cfg,i)=>({...cfg,started:false,cleared:false,left:makeGate(cfg.start,`arena-${i}-left`),right:makeGate(cfg.end,`arena-${i}-right`)}));this.arenaHud=this.add.text(640,126,'',{fontFamily:'monospace',fontSize:'14px',color:'#fff1c1',backgroundColor:'#24152ccc',padding:{x:10,y:5},stroke:'#1b0919',strokeThickness:2}).setOrigin(.5).setScrollFactor(0).setDepth(1150).setVisible(false);}
+  startCombatArena(a){if(!a||a.started)return;a.started=true;[a.left,a.right].forEach(g=>{g.visualParts.forEach(part=>part.setVisible(true));g.body.body.enable=true;g.body.body.updateFromGameObject();g.projectileCollider=this.physics.add.collider(this.projectiles,g.body,(first,second)=>{const shot=first===g.body?second:first;if(shot&&shot!==g.body)shot.destroy();});});this.cameras.main.shake(120,.003);this.uiManager.showMessage(a.message||'DERROTA A LOS GUARDIANES','#ffe2a0',1500);this.updateCombatArena(a);}
+  updateCombatArena(a){if(!a?.started||a.cleared)return;const remaining=this.enemies.getChildren().filter(e=>e.active&&e.x>a.start&&e.x<a.end);this.arenaHud.setVisible(true).setText(`⚔  ENEMIGOS  ${remaining.length}`);if(remaining.length)return;a.cleared=true;this.arenaHud.setText('✦  PASO LIBRE').setColor('#bfffc9');[a.left,a.right].forEach((g,i)=>{g.body.body.enable=false;this.tweens.add({targets:g.visualParts,scaleY:.25,alpha:0,duration:700,delay:i*100,onComplete:()=>{g.visualParts.forEach(part=>part.setVisible(false));if(this.scene.key==='Level1Scene')for(let n=0;n<7;n++)this.add.image(g.x-45+n*15,g.y-8,'collectible-rose').setScale(.35).setDepth(17);}});});this.time.delayedCall(1200,()=>this.arenaHud.setVisible(false).setColor('#fff1c1'));this.audioManager.playSfx('checkpoint');}
 
   makeLevelPuzzle(){this.puzzleSolved=false;this.puzzlePrompt=this.scene.key==='Level1Scene'?this.makeMemoryPuzzlePanel():this.add.text(640,590,'',{fontFamily:'monospace',fontSize:'16px',color:'#fff2d6',backgroundColor:'#29162d',padding:{x:14,y:8},align:'center'}).setOrigin(.5).setScrollFactor(0).setDepth(1100).setVisible(false);
     if(this.scene.key==='Level1Scene'){this.puzzleX=this.dataDef.puzzleX??1480;this.puzzleDoor=this.makePuzzleDoor(this.puzzleX,'PUERTA DEL\nRECUERDO');this.input.keyboard.on('keydown',event=>this.answerMemoryPuzzle(event.key?.toUpperCase()));}
