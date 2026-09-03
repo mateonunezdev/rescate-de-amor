@@ -21,8 +21,8 @@ export default class MenuScene extends Phaser.Scene {
     this.createButtons();
     this.createFooter();
 
-    this.input.keyboard.once('keydown-ENTER', () => this.triggerNewGame());
-    this.input.keyboard.once('keydown-SPACE', () => this.triggerNewGame());
+    this.input.keyboard.on('keydown-ENTER', () => { if (!this.modal && !this.transitioning) this.triggerNewGame(); });
+    this.input.keyboard.on('keydown-SPACE', () => { if (!this.modal && !this.transitioning) this.triggerNewGame(); });
   }
 
   createSky() {
@@ -65,6 +65,7 @@ export default class MenuScene extends Phaser.Scene {
       cloud.fillStyle(cloudColors[i % cloudColors.length], 0.08);
       cloud.fillRoundedRect(0, 0, 80, 18, 10);
       cloud.generateTexture(`cloud-${i}`, 80, 18);
+      cloud.destroy();
       const sprite = this.add.image(this.scale.width * (0.12 + i * 0.08), 80 + (i % 4) * 34, `cloud-${i}`);
       sprite.setBlendMode(Phaser.BlendModes.SCREEN);
       sprite.setAlpha(0.35);
@@ -170,6 +171,7 @@ export default class MenuScene extends Phaser.Scene {
       pigeon.fillTriangle(0, 6, 18, 4, 12, 10);
       pigeon.fillTriangle(18, 6, 30, 4, 24, 10);
       pigeon.generateTexture(`pigeon-${i}`, 30, 16);
+      pigeon.destroy();
       const bird = this.add.image(this.scale.width * (0.68 + i * 0.04), 260 + i * 18, `pigeon-${i}`);
       bird.setScale(0.9);
       bird.setDepth(16);
@@ -208,12 +210,17 @@ export default class MenuScene extends Phaser.Scene {
     paolaSprite.setScale(0.92);
 
     const roses = this.add.graphics();
-    roses.fillStyle(0xff5da5, 1);
-    for (let i = 0; i < 8; i++) {
-      const x = 70 + i * 26;
-      roses.fillCircle(x, 620 - (i % 2) * 12, 7);
+    for (let i = 0; i < 7; i++) {
+      const x = 18 + i * 29;
+      const y = 66 - (i % 2) * 11;
+      roses.fillStyle(0x3f7d4d, 1).fillRect(x - 1, y + 3, 3, 16);
+      roses.fillTriangle(x, y + 10, x - 8, y + 5, x - 2, y + 14);
+      roses.fillStyle(i % 2 ? 0xff79ad : 0xd83e78, 1);
+      roses.fillCircle(x - 4, y, 5).fillCircle(x + 4, y, 5).fillCircle(x, y - 4, 5);
+      roses.fillStyle(0xffc0d8, 1).fillCircle(x, y, 2);
     }
     roses.generateTexture('rose-cluster', 220, 80);
+    roses.destroy();
     this.add.image(260, 620, 'rose-cluster').setOrigin(0.5, 1).setDepth(18);
   }
 
@@ -277,33 +284,23 @@ export default class MenuScene extends Phaser.Scene {
 
   createButtons() {
     const buttonData = [
-      { key: 'new', label: '♥ NUEVA PARTIDA', x: this.scale.width / 2, y: 385 },
-      { key: 'continue', label: '▣ CONTINUAR', x: this.scale.width / 2, y: 430 },
-      { key: 'controls', label: '◆ CONTROLES', x: this.scale.width / 2, y: 475 },
-      { key: 'cards', label: '✉ CARTAS', x: this.scale.width / 2, y: 520 },
-      { key: 'settings', label: '⚙ AJUSTES', x: this.scale.width / 2, y: 565 },
-      { key: 'achievements', label: '★ LOGROS', x: this.scale.width / 2, y: 610 },
-      { key: 'credits', label: '✦ CRÉDITOS', x: this.scale.width / 2, y: 655 },
+      { key: 'new', label: '♥ NUEVA PARTIDA', x: 640, y: 385, width: 360 },
+      { key: 'continue', label: '▣ CONTINUAR', x: 640, y: 435, width: 360 },
+      { key: 'controls', label: '◆ CONTROLES', x: 495, y: 495, width: 270 },
+      { key: 'cards', label: '✉ CARTAS', x: 785, y: 495, width: 270 },
+      { key: 'settings', label: '⚙ AJUSTES', x: 495, y: 545, width: 270 },
+      { key: 'achievements', label: '★ LOGROS', x: 785, y: 545, width: 270 },
+      { key: 'credits', label: '✦ CRÉDITOS', x: 640, y: 595, width: 360 },
     ];
 
-    this.buttonGroup = this.add.container(0, 0);
+    this.buttonGroup = this.add.container(0, 0).setDepth(30);
     const hasSave = !!localStorage.getItem('rescate-de-amor-save');
 
     this.buttonObjects = buttonData.map((entry, index) => {
-      const panel = this.add.rectangle(entry.x, entry.y, 340, 46, 0x1e1227, 0.9);
+      const panel = this.add.rectangle(entry.x, entry.y, entry.width, 44, 0x1e1227, 0.92);
       panel.setStrokeStyle(2, 0xf4d48a, 1);
       panel.setDepth(30);
       panel.setAlpha(entry.key === 'continue' && !hasSave ? 0.4 : 1);
-
-      const icon = this.add.graphics();
-      icon.fillStyle(0xff7bb4, 1);
-      icon.fillRect(entry.x - 120, entry.y - 8, 14, 14);
-      icon.fillStyle(0xf7d98a, 1);
-      icon.fillRect(entry.x - 120 + 3, entry.y - 4, 8, 8);
-      icon.generateTexture(`icon-${entry.key}`, 20, 20);
-      const iconSprite = this.add.image(entry.x - 120, entry.y, `icon-${entry.key}`);
-      iconSprite.setDepth(31);
-      iconSprite.setAlpha(entry.key === 'continue' && !hasSave ? 0.45 : 1);
 
       const text = this.add.text(entry.x, entry.y, entry.label, {
         fontFamily: 'monospace',
@@ -342,11 +339,12 @@ export default class MenuScene extends Phaser.Scene {
         panel.on('pointerdown', actionMap[entry.key]);
       }
 
-      this.buttonGroup.add([panel, iconSprite, text]);
-      return { panel, text, iconSprite, key: entry.key, action: actionMap[entry.key] };
+      this.buttonGroup.add([panel, text]);
+      return { panel, text, key: entry.key, action: actionMap[entry.key] };
     });
 
     this.input.keyboard.on('keydown', (event) => {
+      if (this.modal || this.transitioning) return;
       if (event.code === 'KeyN') this.triggerNewGame();
       if (event.code === 'KeyC') this.loadSave();
     });
@@ -365,6 +363,9 @@ export default class MenuScene extends Phaser.Scene {
   }
 
   triggerNewGame() {
+    if (this.transitioning) return;
+    this.transitioning = true;
+    this.closeModal();
     SaveManager.newGame();
     this.time.delayedCall(150, () => {
       this.cameras.main.fadeOut(700, 0, 0, 0);
@@ -387,44 +388,20 @@ export default class MenuScene extends Phaser.Scene {
   }
 
   loadSave() {
+    if (this.transitioning || !localStorage.getItem('rescate-de-amor-save')) return;
+    this.transitioning = true;
+    this.closeModal();
     const data = SaveManager.load();
     Object.assign(gameState, data);
     this.scene.start(data.currentScene && this.scene.manager.keys[data.currentScene] ? data.currentScene : 'Level1Scene');
   }
 
   showControls() {
-    const overlay = this.add.rectangle(this.scale.width / 2, this.scale.height / 2, 620, 360, 0x1d1028, 0.94).setStrokeStyle(4, 0xf7d98a, 1);
-    overlay.setDepth(40);
-    const text = this.add.text(this.scale.width / 2, this.scale.height / 2 - 80, 'CONTROLES\n\nA/D o flechas — mover\nSHIFT — correr\nSPACE/W/↑ — saltar\nZ/J — combo de golpes\nX/K — energía (mantener: cargado)\n↓ + Z — golpe aéreo\nC/L — especial\nV — Escudo de Amor\nESC — pausa', {
-      fontFamily: 'monospace',
-      fontSize: '22px',
-      color: '#f5ebff',
-      align: 'center',
-      lineSpacing: 10,
-    }).setOrigin(0.5);
-    text.setDepth(41);
-    const close = this.add.rectangle(this.scale.width / 2, this.scale.height / 2 + 120, 180, 42, 0x3d2a4d, 0.9).setInteractive();
-    close.setDepth(42);
-    close.on('pointerdown', () => { overlay.destroy(); text.destroy(); close.destroy(); this.add.text(close.x, close.y, 'VOLVER', { fontFamily: 'monospace', fontSize: '20px', color: '#fff' }).setOrigin(0.5); });
-    this.add.text(close.x, close.y, 'VOLVER', { fontFamily: 'monospace', fontSize: '20px', color: '#fff' }).setOrigin(0.5).setDepth(43);
+    this.showModal('CONTROLES', 'A/D o flechas  ·  Mover\nSHIFT o Q  ·  Dash / correr\nSPACE, W o ↑  ·  Saltar\nZ o J  ·  Combo cuerpo a cuerpo\nX o K  ·  Energía de amor\n↓ + Z  ·  Golpe aéreo\nC o L  ·  Ataque especial\nV  ·  Escudo de Amor\nESC  ·  Pausa');
   }
 
   showCredits() {
-    const overlay = this.add.rectangle(this.scale.width / 2, this.scale.height / 2, 620, 360, 0x1d1028, 0.94).setStrokeStyle(4, 0xf7d98a, 1);
-    overlay.setDepth(40);
-    const text = this.add.text(this.scale.width / 2, this.scale.height / 2, 'RESCATE DE AMOR\n\nUna aventura original para Paola y Mateo\nArte pixel generado localmente\nMúsica y efectos sintetizados', {
-      fontFamily: 'monospace',
-      fontSize: '20px',
-      color: '#f5ebff',
-      align: 'center',
-      lineSpacing: 12,
-    }).setOrigin(0.5);
-    text.setDepth(41);
-    const close = this.add.rectangle(this.scale.width / 2, this.scale.height / 2 + 130, 180, 42, 0x3d2a4d, 0.9).setInteractive();
-    close.setDepth(42);
-    const label = this.add.text(close.x, close.y, 'VOLVER', { fontFamily: 'monospace', fontSize: '20px', color: '#fff' }).setOrigin(0.5);
-    label.setDepth(43);
-    close.on('pointerdown', () => { overlay.destroy(); text.destroy(); close.destroy(); label.destroy(); });
+    this.showModal('CRÉDITOS', 'RESCATE DE AMOR\n\nUna aventura original para Paola y Mateo\nArte pixel generado localmente\nMúsica y efectos sintetizados');
   }
 
   showCards() {
@@ -433,5 +410,6 @@ export default class MenuScene extends Phaser.Scene {
   }
   showAchievements(){ const a=SaveManager.load().achievements||[]; this.showModal('LOGROS',a.length?a.map(x=>`★ ${x}`).join('\n\n'):'🔒 La aventura aún no ha comenzado.'); }
   showSettings(){ const data=SaveManager.load(); const muted=!data.settings.muted; data.settings.muted=muted; Object.assign(gameState,data);SaveManager.save(data);this.showModal('AJUSTES',`Audio: ${muted?'SILENCIADO':'ACTIVO'}\n\nLa preferencia quedó guardada.`); }
-  showModal(title,body){const pieces=[];const shade=this.add.rectangle(640,360,1280,720,0x080511,.82).setDepth(80).setInteractive();const panel=this.add.rectangle(640,360,720,520,0x21122c,.98).setStrokeStyle(5,0xf2c86f).setDepth(81);const h=this.add.text(640,155,title,{fontFamily:'monospace',fontSize:'31px',color:'#ffe4a1'}).setOrigin(.5).setDepth(82);const t=this.add.text(640,350,body,{fontFamily:'monospace',fontSize:'17px',color:'#ffeaf5',align:'center',lineSpacing:5,wordWrap:{width:620}}).setOrigin(.5).setDepth(82);const close=this.add.text(640,570,'VOLVER',{fontFamily:'monospace',fontSize:'20px',color:'#fff',backgroundColor:'#6b3159',padding:{x:20,y:10}}).setOrigin(.5).setDepth(82).setInteractive({useHandCursor:true});pieces.push(shade,panel,h,t,close);close.on('pointerdown',()=>pieces.forEach(x=>x.destroy()));}
+  closeModal(){if(!this.modal)return;this.modal.destroy(true);this.modal=null;}
+  showModal(title,body){this.closeModal();this.modal=this.add.container(0,0).setDepth(80);const shade=this.add.rectangle(640,360,1280,720,0x080511,.84).setInteractive();const panel=this.add.rectangle(640,360,720,520,0x21122c,.99).setStrokeStyle(5,0xf2c86f);const h=this.add.text(640,155,title,{fontFamily:'monospace',fontSize:'31px',color:'#ffe4a1'}).setOrigin(.5);const t=this.add.text(640,350,body,{fontFamily:'monospace',fontSize:'17px',color:'#ffeaf5',align:'center',lineSpacing:5,wordWrap:{width:620}}).setOrigin(.5);const close=this.add.text(640,570,'VOLVER  [ESC]',{fontFamily:'monospace',fontSize:'20px',color:'#fff',backgroundColor:'#6b3159',padding:{x:20,y:10}}).setOrigin(.5).setInteractive({useHandCursor:true});this.modal.add([shade,panel,h,t,close]);close.once('pointerdown',()=>this.closeModal());this.input.keyboard.once('keydown-ESC',()=>this.closeModal());this.tweens.add({targets:this.modal,alpha:{from:0,to:1},duration:160});}
 }

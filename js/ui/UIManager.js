@@ -7,6 +7,8 @@ export default class UIManager {
     this.rosesText = null;
     this.lettersText = null;
     this.powerText = null;
+    this.messageQueue = [];
+    this.activeMessage = null;
     if(options.hud !== false)this.createHud();
   }
 
@@ -43,6 +45,13 @@ export default class UIManager {
   }
 
   showMessage(text, color = '#f8d9af', duration = 1200) {
+    this.messageQueue.push({ text, color, duration });
+    this.showNextMessage();
+  }
+
+  showNextMessage() {
+    if (this.activeMessage?.active || !this.messageQueue.length) return;
+    const { text, color, duration } = this.messageQueue.shift();
     const msg = this.scene.add.text(this.scene.scale.width / 2, this.scene.scale.height / 2 - 40, text, {
       fontFamily: 'monospace',
       fontSize: '22px',
@@ -50,13 +59,18 @@ export default class UIManager {
       backgroundColor: 'rgba(18, 12, 28, 0.7)',
       padding: { left: 18, right: 18, top: 8, bottom: 8 },
     }).setOrigin(0.5).setScrollFactor(0).setDepth(1100);
+    this.activeMessage = msg;
 
     this.scene.tweens.add({
       targets: msg,
       alpha: 0,
       y: msg.y - 30,
       duration,
-      onComplete: () => msg.destroy(),
+      onComplete: () => {
+        msg.destroy();
+        if (this.activeMessage === msg) this.activeMessage = null;
+        this.showNextMessage();
+      },
     });
   }
 

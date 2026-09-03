@@ -10,7 +10,7 @@ export default class Enemy extends Phaser.Physics.Arcade.Sprite{
   releaseAttackSlot(){if(this.attackSlot)this.scene.directAttackers?.delete(this);this.attackSlot=false;}
   canAct(){return this.active&&this.body?.enable&&this.visible&&this.alpha>=.45;}
   update(delta=16){
-    if(!this.canAct()||this.state===STATES.DEAD)return;const player=this.scene.player;if(!player)return;this.stateTime-=delta;this.attackCooldown=Math.max(0,this.attackCooldown-delta);const dx=player.x-this.x,dist=Math.abs(dx);if(dx)this.direction=Math.sign(dx);this.setFlipX(this.direction<0);
+    if(!this.canAct()||this.state===STATES.DEAD)return;if(this.inAction){this.setVelocityX(0);return;}const player=this.scene.player;if(!player)return;this.stateTime-=delta;this.attackCooldown=Math.max(0,this.attackCooldown-delta);const dx=player.x-this.x,dist=Math.abs(dx);if(dx)this.direction=Math.sign(dx);this.setFlipX(this.direction<0);
     if(this.state===STATES.HURT){this.setVelocityX(0);if(this.stateTime<=0)this.enter(STATES.RECOVER,240);return;}
     if(this.state===STATES.TELEGRAPH||this.state===STATES.ATTACK||(!this.flying&&this.state===STATES.RECOVER)){if(this.stateTime<=0)this.advanceAction(player);return;}
     if(this.flying){this.updateFlying(player,dist,delta);return;}

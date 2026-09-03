@@ -33,7 +33,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.cursors = scene.input.keyboard.createCursorKeys();
     this.keys = scene.input.keyboard.addKeys('A,D,S,W,SHIFT,SPACE,X,K,Z,J,C,L,E,V,Q');
     this.attackCooldown = 0;this.shieldActive=0;this.shieldCooldown=0;this.shieldDuration=1800;this.shieldCooldownMax=6500;this.shieldFx=null;
-    this.loveCharge=0;this.chargeFxTimer=0;this.comboStep=0;this.comboTimer=0;this.airSlamming=false;this.specialCooldown=0;this.combatPoseUntil=0;this.combatPoseFrame=6;this.dashCooldown=0;this.dashTime=0;this.dashTrailTimer=0;
+    this.loveCharge=0;this.chargeFxTimer=0;this.comboStep=0;this.comboTimer=0;this.airSlamming=false;this.specialCooldown=0;this.combatPoseUntil=0;this.combatPoseFrame=7;this.dashCooldown=0;this.dashTime=0;this.dashTrailTimer=0;
   }
 
   update(time, delta) {
@@ -115,7 +115,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       this.clearTint();
     }
 
-    if(this.hasFinalArt){let frame=0;if(time<this.combatPoseUntil)frame=this.combatPoseFrame;else if(this.crouching)frame=5;else if(this.attackCooldown>235)frame=6;else if(!this.isGrounded)frame=this.body.velocity.y<0?3:4;else if(Math.abs(this.body.velocity.x)>280)frame=2;else if(Math.abs(this.body.velocity.x)>20)frame=1;this.setFrame(frame);}
+    if(this.hasFinalArt){let frame=0;if(time<this.combatPoseUntil)frame=this.combatPoseFrame;else if(this.crouching)frame=6;else if(this.attackCooldown>235)frame=7;else if(!this.isGrounded)frame=this.body.velocity.y<0?3:4;else if(Math.abs(this.body.velocity.x)>280)frame=2;else if(Math.abs(this.body.velocity.x)>20)frame=1;this.setFrame(frame);}
     if (this.isGrounded && Math.abs(this.body.velocity.x) < 15 && !this.crouching) {
       this.setScale(this.baseScale, this.baseScale + Math.sin(time / 280) * this.baseScale*.018);
     } else if (this.isGrounded) {

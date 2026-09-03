@@ -1,5 +1,5 @@
-import Player from '../entities/Player.js?v=20260826-cage-rig-35';
-import UIManager from '../ui/UIManager.js?v=20260830-dialogue-layout-04';
+import Player from '../entities/Player.js?v=20260902-physics-visual-fix-11';
+import UIManager from '../ui/UIManager.js?v=20260902-professional-polish-13';
 import AudioManager from '../systems/AudioManager.js';
 import ParticleManager from '../systems/ParticleManager.js';
 import { gameState } from '../config.js';
