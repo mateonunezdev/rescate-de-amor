@@ -1,4 +1,4 @@
-import { createMateoCageRig } from '../utils/CageRig.js?v=20260831-intro-world-repair-02';
+import { createMateoCageRig } from '../utils/CageRig.js?v=20260903-intro-cage-fix-04';
 import UIManager from '../ui/UIManager.js?v=20260902-professional-polish-13';
 
 export default class IntroScene extends Phaser.Scene {
@@ -46,12 +46,12 @@ export default class IntroScene extends Phaser.Scene {
     if(this.paolaActionReady)return;
     const x=this.paola?.x??500,y=this.paola?.y??538,flip=this.paola?.flipX??false;
     this.tweens.killTweensOf(this.paola);this.paola?.destroy();
-    this.paola=this.add.image(x,y,'paola-final',2).setOrigin(.5).setScale(1.35).setFlipX(flip).setDepth(45);
+    this.paola=this.add.image(x,y,'paola-final',2).setOrigin(.5).setScale(1.2).setFlipX(flip).setDepth(45);
     this.paolaActionReady=true;
   }
 
   closeCage(){
-    this.tweens.killTweensOf(this.mateo);this.cageRig=createMateoCageRig(this,this.mateo.x,this.mateo.y-28,{mateo:this.mateo,frame:1,depth:40,locked:true}).setScale(.2);this.mateo=this.cageRig.mateo.setFrame(1);this.cageRig.cage.scaleY=.02;this.playCue('magic');this.cameras.main.shake(260,.006);this.tweens.add({targets:this.cageRig,scale:1,duration:520,ease:'Back.easeOut'});this.tweens.add({targets:this.cageRig.cage,scaleY:.7,duration:520,delay:250,ease:'Bounce.easeOut'});const ring=this.add.ellipse(this.cageRig.x,this.cageRig.y+45,190,58,0xff4faf,.18).setStrokeStyle(6,0xff77c0).setDepth(18);this.tweens.add({targets:ring,scale:1.5,alpha:0,duration:850,repeat:1,onComplete:()=>ring.destroy()});this.spawnBirds(6,this.cageRig);
+    this.tweens.killTweensOf(this.mateo);this.cageRig=createMateoCageRig(this,this.mateo.x,490,{mateo:this.mateo,frame:1,depth:40,locked:true,mateoX:-18,mateoY:43,mateoScale:1.05});this.mateo=this.cageRig.mateo.setFrame(1).setAlpha(1);const cage=this.cageRig.cage,glow=this.cageRig.glow,lock=this.cageRig.lock,finalScale=this.cageRig.cageScale;cage.setScale(.12).setAlpha(.15);glow.setScale(.4).setAlpha(0);lock.setScale(.1).setAlpha(0);this.playCue('magic');this.cameras.main.shake(260,.006);this.tweens.add({targets:cage,scaleX:finalScale,scaleY:finalScale,alpha:1,duration:620,ease:'Back.easeOut'});this.tweens.add({targets:glow,scale:1,alpha:.38,duration:520,ease:'Sine.easeOut'});this.tweens.add({targets:lock,scale:1,alpha:.72,duration:360,delay:430,ease:'Back.easeOut'});const ring=this.add.ellipse(this.cageRig.x,588,190,58,0xff4faf,.18).setStrokeStyle(6,0xff77c0).setDepth(18);this.tweens.add({targets:ring,scale:1.5,alpha:0,duration:850,repeat:1,onComplete:()=>ring.destroy()});this.spawnBirds(6,this.cageRig);
   }
   paolaAttemptsCage(){
     this.ensurePaolaActionSprite();this.locked=true;this.prompt.setText('PAOLA CORRE HACIA MATEO…');this.tweens.killTweensOf(this.paola);this.paola.setFrame(2).setVisible(true).setAlpha(1).setFlipX(false).setDepth(45);
@@ -59,19 +59,19 @@ export default class IntroScene extends Phaser.Scene {
     this.bubble('PAOLA','¡Mateo!',470,435,'right',900);
     this.time.delayedCall(420,()=>this.bubble('MATEO','¡Paola!',740,405,'left',900));
     this.tweens.add({targets:this.paola,x:this.cageRig.x-145,y:538,duration:560,ease:'Sine.easeOut',onComplete:()=>{
-      this.paola.setFrame(7);this.bubble('PAOLA','¡Voy a sacarte de ahí!',450,430,'right',1200);
+      this.paola.setFrame(0);this.bubble('PAOLA','¡Voy a sacarte de ahí!',450,430,'right',1200);
       this.time.delayedCall(520,()=>this.bubble('MATEO','¡Cuidado!',745,410,'left',900));
       [0,520,1040].forEach((delay,index)=>this.time.delayedCall(delay,()=>{
-        this.paola.setFrame(index%2?8:7);this.tweens.add({targets:this.paola,x:this.cageRig.x-125,duration:115,yoyo:true,ease:'Sine.easeInOut'});
+        this.paola.setFrame(index%2?0:6);this.tweens.add({targets:this.paola,x:this.cageRig.x-125,duration:115,yoyo:true,ease:'Sine.easeInOut'});
         this.tweens.add({targets:this.cageRig,x:this.cageRig.x+(index%2?-6:6),angle:index%2?-1.1:1.1,duration:70,yoyo:true,repeat:2,onComplete:()=>this.cageRig.setAngle(0)});
         this.tweens.add({targets:this.cageRig.glow,alpha:.66,scale:1.12,duration:120,yoyo:true});
         this.cameras.main.shake(90,.0018);this.playCue('hit');
       }));
-      this.time.delayedCall(1570,()=>{this.paola.setFrame(6);this.bubble('PAOLA','¡No se abre!',455,430,'right',1250);});
+      this.time.delayedCall(1570,()=>{this.paola.setFrame(9);this.bubble('PAOLA','¡No se abre!',455,430,'right',1250);});
     }});
   }
   magicPush(){
-    this.locked=true;this.prompt.setText('LA MAGIA RODEA LA JAULA…');this.paola.setTexture('paola-final',6).setOrigin(.5).setScale(1.35).setVisible(true).setAlpha(1).setDepth(45);this.villain.setVisible(true).setAlpha(1);this.aura.setVisible(true).setAlpha(1);
+    this.locked=true;this.prompt.setText('LA MAGIA RODEA LA JAULA…');this.paola.setTexture('paola-final',6).setOrigin(.5).setScale(1.2).setVisible(true).setAlpha(1).setDepth(45);this.villain.setVisible(true).setAlpha(1);this.aura.setVisible(true).setAlpha(1);
     this.tweens.add({targets:[this.villain,this.aura],x:this.cageRig.x+205,y:this.cageRig.y-115,duration:520,ease:'Sine.easeOut'});
     this.bubble('PECHO PALOMA','Es inútil. Ahora viene conmigo.',885,390,'left',1500);
     this.time.delayedCall(600,()=>this.bubble('PAOLA','¡Déjalo!',455,430,'right',1050));
@@ -80,11 +80,11 @@ export default class IntroScene extends Phaser.Scene {
     this.tweens.add({targets:this.cageRig.glow,alpha:.78,scale:1.3,duration:350,yoyo:true,repeat:2});
     this.tweens.add({targets:this.cageRig,angle:1.2,duration:80,yoyo:true,repeat:5,onComplete:()=>this.cageRig.setAngle(0)});
     this.time.delayedCall(650,()=>{this.playCue('magic');this.cameras.main.shake(220,.003);this.tweens.add({targets:this.cageRig,y:this.cageRig.y-105,x:this.cageRig.x+25,duration:1250,ease:'Sine.easeInOut'});this.paola.setFrame(2).setDepth(45);this.tweens.add({targets:this.paola,x:this.cageRig.x-150,duration:1050,ease:'Sine.easeInOut'});});
-    this.time.delayedCall(2250,()=>{this.paola.setFrame(6);this.locked=false;this.prompt.setText('ENTER · ESPACIO · CLIC');});
+    this.time.delayedCall(2250,()=>{this.paola.setFrame(9);this.locked=false;this.prompt.setText('ENTER · ESPACIO · CLIC');});
   }
 
   flyToCastle(){
-    this.tweens.killTweensOf(this.paola);this.paola.setTexture('paola-final',2).setOrigin(.5).setVisible(true).setAlpha(1).setDepth(45).setScale(1.35);
+    this.tweens.killTweensOf(this.paola);this.paola.setTexture('paola-final',2).setOrigin(.5).setVisible(true).setAlpha(1).setDepth(45).setScale(1.2);
     this.locked=true;this.prompt.setText('LA JAULA VUELA HACIA EL CASTILLO…');this.pecho.setVisible(true).setAlpha(1).setFrame(1);this.aura.setVisible(true).setAlpha(1);this.paola.setFrame(2);
     this.bubble('PAOLA','¡MATEO!',510,420,'right',1150);
     this.time.delayedCall(520,()=>this.bubble('MATEO','¡PAOLA!',770,330,'left',1150));
@@ -118,7 +118,7 @@ export default class IntroScene extends Phaser.Scene {
       ()=>this.say('PECHO PALOMA: “Pero yo sí lo conozco. Mateo… llevo mucho tiempo observándote.”\nPECHO PALOMA: “He visto cómo sonríes… y cómo siempre eliges estar con ella.”'),
       ()=>this.say('PAOLA: “Eso no es amor.”\nPECHO PALOMA: “Tú no decides lo que siento.”\nMATEO: “Y tú tampoco decides por mí.”'),
       ()=>this.say('PECHO PALOMA: “Entonces tendré que darte tiempo para entenderlo.”'),
-      ()=>this.say('MATEO: “¡Paola!”\nPAOLA: “¡Mateo!”',()=>{this.paola.setFrame(6);this.tweens.add({targets:this.paola,x:610,duration:500});this.closeCage();}),
+      ()=>this.say('MATEO: “¡Paola!”\nPAOLA: “¡Mateo!”',()=>{this.paola.setFrame(9);this.tweens.add({targets:this.paola,x:610,duration:500});this.closeCage();}),
       ()=>this.say('CLANG.\nMATEO: “¡No la toques!”\nPECHO PALOMA: “Algún día me mirarás así a mí.”\nMATEO: “No.”',()=>{this.mateo.setFrame(3);this.tweens.add({targets:this.mateo,x:'+=7',duration:90,yoyo:true,repeat:5});},()=>this.paolaAttemptsCage()),
       ()=>this.say('Paola intenta alcanzarlo…',null,()=>this.magicPush()),
       ()=>this.say('PECHO PALOMA: “Entonces ven al castillo.”\nPAOLA: “¡NO TE VOY A DEJAR!”',null,()=>this.flyToCastle()),

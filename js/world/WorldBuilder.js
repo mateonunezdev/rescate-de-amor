@@ -15,12 +15,13 @@ const ARCHITECTURE={
 };
 
 const GROUNDED_SURFACE_Y={forest:160,garden:166,fortress:168,tower:196,palace:174};
+const GATE_FOOT_Y={forest:402,garden:298,fortress:385,tower:439,palace:419};
 
 /** A single declarative definition creates both visible tiles and its collider. */
 export default class WorldBuilder{
   constructor(scene,data){this.scene=scene;this.data=data;this.theme=THEMES[data.theme]||THEMES.forest;this.surfaces=new Map();this.doors=new Map();}
 
-  build(){this.createThemeTextures();this.createBackground();this.data.surfaces.forEach(def=>this.createSurface(this.normalizeSurface(def)));(this.data.decorations||[]).filter(def=>def.type==='light').forEach(def=>this.createDecoration(def));if(this.isLevel1Forest())this.createForestArchitecture();this.createAtmosphere();}
+  build(){this.createThemeTextures();this.createBackground();this.data.surfaces.forEach(def=>this.createSurface(this.normalizeSurface(def)));(this.data.decorations||[]).filter(def=>def.type==='light').forEach(def=>this.createDecoration(def));if(this.isLevel1Forest())this.createForestArchitecture();else this.createAmbientDecor();this.createAtmosphere();}
 
   normalizeSurface(def){
     const id=def.id.toLowerCase(),bridge=/bridge|glasswalk|log/.test(id),balcony=/balcony|ledge|walk|shelf/.test(id);
@@ -106,15 +107,19 @@ export default class WorldBuilder{
       art=[],spec=ARCHITECTURE[this.data.theme],texture=`architecture-${this.data.theme}`;
 
     if(def.kind==='ground'){
-      const visualStep=this.data.theme==='forest'?390:420;
+      const elevated=top<(this.data.height||720)-300;
+      const visualStep=elevated?330:this.data.theme==='forest'?390:420;
       const count=Math.max(1,Math.ceil(width/visualStep));
-      const scale=this.data.theme==='forest'?.86:.82;
       const span=width/count;
       for(let i=0;i<count;i++){
         const px=left+span*(i+.5);
-        const piece=s.add.image(px,top,texture,'ground')
-          .setOrigin(.5,spec.groundY/512).setScale(scale)
-          .setDepth(10).setFlipX(i%2===1);
+        const scale=elevated?Math.max(.82,span/341):this.data.theme==='forest'?.86:.82;
+        const piece=elevated
+          ?s.add.image(px,top,`grounded-${this.data.theme}`)
+            .setOrigin(.5,GROUNDED_SURFACE_Y[this.data.theme]/768).setScale(scale)
+          :s.add.image(px,top,texture,'ground')
+            .setOrigin(.5,spec.groundY/512).setScale(scale);
+        piece.setDepth(10).setFlipX(i%2===1);
         art.push(piece);
       }
     }else{
@@ -141,8 +146,8 @@ export default class WorldBuilder{
         if(i%3===1)piece.setTint(0xe7f1d5);if(i%3===2)piece.setTint(0xd4e6c3);art.push(piece);
       }
     }else{
-      const frames={fallenLog:'fallenLog',rootStep:'rootPlatform',ruinWall:'ruinPlatform',brokenBridge:'brokenBridge',rootBalcony:'rootPlatform'},frame=frames[def.semantic?.replace(/-([a-z])/g,(_,c)=>c.toUpperCase())]||'rockPlatform',profiles={fallenLog:{size:[356,210],walkableRow:110,inset:12},rootPlatform:{size:[365,195],walkableRow:36,inset:14},ruinPlatform:{size:[390,195],walkableRow:82,inset:18},brokenBridge:{size:[421,195],walkableRow:72,inset:16},rockPlatform:{size:[375,195],walkableRow:48,inset:16}},profile=profiles[frame]||profiles.rockPlatform,[rawW,rawH]=profile.size,floor=648,scale=Phaser.Math.Clamp((width+12)/rawW,.42,.72),artY=top+(rawH-profile.walkableRow)*scale;
-      if(['ruin-wall','broken-bridge','root-balcony'].includes(def.semantic))art.push(s.add.image(center,floor,'forest-remaster-atlas','treeRoots').setOrigin(.5,1).setDisplaySize(Math.max(190,width+20),Math.max(150,floor-top+85)).setDepth(9));
+      const frames={'fallen-log':'fallenLog','root-climb':'rootPlatform','ruin-wall':'ruinPlatform','broken-bridge':'brokenBridge','root-balcony':'rootPlatform'},frame=frames[def.semantic]||'rockPlatform',profiles={fallenLog:{size:[356,210],walkableRow:110,inset:12},rootPlatform:{size:[365,195],walkableRow:36,inset:14},ruinPlatform:{size:[390,195],walkableRow:82,inset:18},brokenBridge:{size:[421,195],walkableRow:72,inset:16},rockPlatform:{size:[375,195],walkableRow:48,inset:16}},profile=profiles[frame]||profiles.rockPlatform,[rawW,rawH]=profile.size,floor=648,scale=Phaser.Math.Clamp((width+12)/rawW,.42,.72),artY=top+(rawH-profile.walkableRow)*scale;
+      if(['root-climb','ruin-wall','broken-bridge','root-balcony'].includes(def.semantic))art.push(s.add.image(center,floor,'forest-remaster-atlas','treeRoots').setOrigin(.5,1).setDisplaySize(Math.max(190,width+20),Math.max(150,floor-top+85)).setDepth(9));
       art.push(s.add.image(center,artY,'forest-remaster-atlas',frame).setOrigin(.5,1).setScale(scale).setDepth(11));
       def.colliderWidth=Math.max(96,width-profile.inset*2);
     }
@@ -266,15 +271,15 @@ export default class WorldBuilder{
     let art,leaf,frame=null;
 
     if(arena){
-      leaf=this.isLevel1Forest()?s.add.image(def.x,def.y+8,'forest-remaster-atlas','treeRoots').setOrigin(.5,1).setScale(.58).setDepth(26):s.add.image(def.x,def.y+8,`architecture-${this.data.theme}`,'gate').setOrigin(.5,1).setScale(.48).setDepth(26);
+      leaf=this.isLevel1Forest()?s.add.image(def.x,def.y,'forest-remaster-atlas','treeRoots').setOrigin(.5,1).setScale(.58).setDepth(26):s.add.image(def.x,def.y,`architecture-${this.data.theme}`,'gate').setOrigin(.5,GATE_FOOT_Y[this.data.theme]/512).setScale(.48).setDepth(26);
       art=leaf;
     }else if(forestPuzzle){
-      leaf=s.add.image(def.x,def.y+13,'forest-remaster-atlas','memoryDoorLeaf')
-        .setOrigin(.5,1).setScale(.74).setDepth(26);
+      leaf=s.add.image(def.x,def.y,'forest-remaster-atlas','memoryDoorLeaf')
+        .setOrigin(.5,195/205).setScale(.74).setDepth(26);
       art=leaf;
     }else{
-      leaf=s.add.image(def.x,def.y+8,`architecture-${this.data.theme}`,'gate')
-        .setOrigin(.5,1).setScale(.58).setDepth(26);
+      leaf=s.add.image(def.x,def.y,`architecture-${this.data.theme}`,'gate')
+        .setOrigin(.5,GATE_FOOT_Y[this.data.theme]/512).setScale(.58).setDepth(26);
       art=leaf;
     }
 
@@ -342,12 +347,10 @@ export default class WorldBuilder{
     add(3810,650,'treeTall',.72,16);add(4580,650,'treeWide',.7,16,true);add(4020,650,'treeFlowers',.43,3);add(4410,650,'treeTwisted',.42,3,true);
     add(4690,650,'treeRoots',.62,16);add(5160,650,'treeWide',.65,16,true);add(4930,650,'treeTwisted',.42,3);
     // Cueva emocional corta: oscuridad, cristales y una salida enmarcada, sin combate.
-    s.add.image(5220,650,'forest-remaster-atlas','treeRoots').setDisplaySize(300,340).setOrigin(.5,1).setDepth(17);
-    s.add.image(5630,650,'forest-remaster-atlas','treeRoots').setDisplaySize(300,340).setOrigin(.5,1).setFlipX(true).setDepth(17);
-    s.add.image(5425,470,'forest-remaster-atlas','fallenLog').setDisplaySize(520,165).setOrigin(.5,1).setDepth(15);
+    s.add.image(5425,648,'forest-remaster-atlas','rootTunnel').setDisplaySize(650,292).setOrigin(.5,1).setDepth(15);
     this.heartCrystals=[5290,5400,5510].map((x,i)=>s.add.image(x,602-i*10,'collectible-diamond').setScale(.45+i*.08).setTint(0x8fdcff).setAlpha(.2).setDepth(18));
     // El árbol tiene un claro propio y distancia visual antes del sendero a Level2.
-    this.memoryTree=add(5770,648,'memoryTree',1.08,14,false,.2);add(6090,648,'treeFlowers',.54,12,true);add(6160,648,'treeWide',.48,4);
+    this.memoryTree=add(5740,648,'treeMemory',.86,14,false,.2);add(5940,648,'treeFlowers',.4,4,true);
     for(let x=5900;x<6180;x+=55)s.add.image(x,620-(x%3)*3,'collectible-rose').setScale(.22).setAlpha(.55).setDepth(13);
   }
 
