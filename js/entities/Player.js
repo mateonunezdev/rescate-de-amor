@@ -65,7 +65,6 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.isGrounded = this.body.blocked.down || this.body.touching.down;
     if (this.isGrounded && !this.wasGrounded && this.body.velocity.y >= 0) {
       this.scene.particleManager?.burst(this.x, this.y + 23, 0xd9c0aa, 5, 45);
-      this.scene.tweens.add({ targets: this, scaleX: this.baseScale*1.08, scaleY: this.baseScale*.93, duration: 70, yoyo: true });
     }
     this.wasGrounded = this.isGrounded;
     if (this.isGrounded) {
@@ -90,7 +89,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
       this.setAccelerationX(0); this.setDragX(this.isGrounded ? 1500 : 420);
     }
 
-    this.crouching = crouch && this.isGrounded;
+    this.crouching = crouch && (this.isGrounded || this.groundedTimer > 0);
     if (this.crouching) {
       this.setVelocityY(Math.min(this.body.velocity.y, 0));
     }
@@ -116,11 +115,9 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     if(this.hasFinalArt){let frame=0;if(time<this.combatPoseUntil)frame=this.combatPoseFrame;else if(this.crouching)frame=6;else if(this.attackCooldown>235)frame=7;else if(!this.isGrounded)frame=this.body.velocity.y<0?3:4;else if(Math.abs(this.body.velocity.x)>280)frame=2;else if(Math.abs(this.body.velocity.x)>20)frame=1;this.setFrame(frame);}
-    if (this.isGrounded && Math.abs(this.body.velocity.x) < 15 && !this.crouching) {
-      this.setScale(this.baseScale, this.baseScale + Math.sin(time / 280) * this.baseScale*.018);
-    } else if (this.isGrounded) {
-      this.setScale(this.baseScale, this.baseScale + Math.sin(time / (run ? 65 : 100)) * this.baseScale*.032);
-    }
+    // Keep the Arcade body stable: scaling the physics sprite every frame made
+    // its feet oscillate above the visible surface and caused contact jitter.
+    this.setScale(this.baseScale);
 
     this.setFlipX(this.facing < 0);
   }
@@ -135,7 +132,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     }
   }
 
-  playCombatPose(frame,duration=180,angle=0){this.combatPoseFrame=frame;this.combatPoseUntil=this.scene.time.now+duration;this.scene.tweens.killTweensOf(this);this.setAngle(-angle*.35);this.scene.tweens.add({targets:this,angle,scaleX:this.baseScale*(frame===9?1.1:1.04),scaleY:this.baseScale*(frame===9?.94:1),duration:duration*.45,yoyo:true,ease:'Sine.easeOut'});}
+  playCombatPose(frame,duration=180,angle=0){this.combatPoseFrame=frame;this.combatPoseUntil=this.scene.time.now+duration;this.scene.tweens.killTweensOf(this);this.setScale(this.baseScale).setAngle(-angle*.35);this.scene.tweens.add({targets:this,angle,duration:duration*.45,yoyo:true,ease:'Sine.easeOut'});}
 
   activateLoveShield(){
     this.shieldActive=this.shieldDuration;this.shieldCooldown=this.shieldCooldownMax;this.scene.audioManager?.playSfx('checkpoint');
@@ -145,6 +142,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
   shieldImpact(x=this.x,y=this.y){if(!this.shieldFx?.active)return;this.shieldFx.setAlpha(1.5);this.scene.tweens.add({targets:this.shieldFx,scale:1.18,alpha:1,duration:90,yoyo:true});this.scene.particleManager?.sparkles(x,y,0xffd5ed,10);this.scene.cameras.main.shake(55,.0025);this.scene.audioManager?.playSfx('bossHit');}
 
   takeDamage(amount = 1,source=null) {
+    if(this.scene.time.now<(this.scene.spawnProtectionUntil||0))return false;
     if(this.shieldActive>0){this.shieldImpact();return false;}
     if (this.invulnerable > 0) return;
     const sourceType=source?.type||source?.constructor?.name||'UNKNOWN';

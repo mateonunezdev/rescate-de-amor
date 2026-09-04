@@ -24,7 +24,7 @@ export const GAME_CONFIG = {
   },
   fps: {
     target: 60,
-    forceSetTimeOut: true,
+    forceSetTimeOut: false,
   },
 };
 

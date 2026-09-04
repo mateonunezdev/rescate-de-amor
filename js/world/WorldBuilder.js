@@ -21,7 +21,7 @@ const GATE_FOOT_Y={forest:402,garden:298,fortress:385,tower:439,palace:419};
 export default class WorldBuilder{
   constructor(scene,data){this.scene=scene;this.data=data;this.theme=THEMES[data.theme]||THEMES.forest;this.surfaces=new Map();this.doors=new Map();}
 
-  build(){this.createThemeTextures();this.createBackground();this.data.surfaces.forEach(def=>this.createSurface(this.normalizeSurface(def)));(this.data.decorations||[]).filter(def=>def.type==='light').forEach(def=>this.createDecoration(def));if(this.isLevel1Forest())this.createForestArchitecture();else this.createAmbientDecor();this.createAtmosphere();}
+  build(){this.createThemeTextures();this.createBackground();this.data.surfaces.forEach(def=>this.createSurface(this.normalizeSurface(def)));if(!this.isLevel1Forest())this.surfaces.forEach(surface=>{if(surface.kind!=='ground')this.createGroundedSupports(surface,{left:surface.left,right:surface.right,center:surface.x,top:surface.top,width:surface.width,art:surface.art});});(this.data.decorations||[]).filter(def=>def.type==='light').forEach(def=>this.createDecoration(def));if(this.isLevel1Forest())this.createForestArchitecture();else this.createAmbientDecor();this.createAtmosphere();}
 
   normalizeSurface(def){
     const id=def.id.toLowerCase(),bridge=/bridge|glasswalk|log/.test(id),balcony=/balcony|ledge|walk|shelf/.test(id);
@@ -49,7 +49,9 @@ export default class WorldBuilder{
 
   createBackground(){
     const s=this.scene,d=this.data,theme=d.theme;
-    s.physics.world.setBounds(0,0,d.width,d.height||720);
+    // Keep the physical bottom below the visible map. Otherwise Arcade's
+    // world bound behaves like an invisible floor between real surfaces.
+    s.physics.world.setBounds(0,-160,d.width,(d.height||720)+1060);
     s.cameras.main.setBackgroundColor(d.sky);
 
     const key=`world-depth-${theme}`;
