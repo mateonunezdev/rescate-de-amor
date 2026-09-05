@@ -13,9 +13,7 @@ export default class MenuScene extends Phaser.Scene {
     this.cameras.main.fadeIn(500, 12, 10, 23);
 
     this.sceneObjects = this.add.container(0, 0);
-    this.createSky();
-    this.createParallaxScene();
-    this.createCastleForefront();
+    this.createBackdrop();
     this.createCharacters();
     this.createTitle();
     this.createButtons();
@@ -23,6 +21,27 @@ export default class MenuScene extends Phaser.Scene {
 
     this.input.keyboard.on('keydown-ENTER', () => { if (!this.modal && !this.transitioning) this.triggerNewGame(); });
     this.input.keyboard.on('keydown-SPACE', () => { if (!this.modal && !this.transitioning) this.triggerNewGame(); });
+  }
+
+  createBackdrop() {
+    const world = this.add.image(640, 360, 'bg-romantic').setDisplaySize(1280, 720).setDepth(0);
+    world.setTint(0xaab0d7);
+    this.add.rectangle(640, 360, 1280, 720, 0x090617, 0.32).setDepth(1);
+    this.add.rectangle(640, 410, 610, 520, 0x12091c, 0.72).setStrokeStyle(3, 0xd5a85f, 0.55).setDepth(20);
+
+    const mateo = this.add.image(1080, 595, 'mateo-final', 1).setOrigin(0.5, 1).setScale(0.83).setDepth(17);
+    const cage = this.add.image(1080, 630, 'gothic-cage').setOrigin(0.5, 1).setScale(0.66).setDepth(18);
+    const pecho = this.add.image(1182, 500, 'pecho-final', 1).setScale(0.82).setDepth(19);
+    const glow = this.add.ellipse(1080, 545, 156, 190, 0xff55ad, 0.1).setStrokeStyle(3, 0xff87c0, 0.42).setDepth(16);
+    this.tweens.add({ targets: [cage, mateo, glow], y: '-=5', duration: 1500, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+    this.tweens.add({ targets: pecho, y: pecho.y - 8, duration: 1200, yoyo: true, repeat: -1, ease: 'Sine.easeInOut' });
+
+    for (let i = 0; i < 12; i++) {
+      const spark = this.add.text(1010 + Math.random() * 185, 430 + Math.random() * 175, i % 2 ? '♥' : '✦', {
+        fontFamily: 'monospace', fontSize: '11px', color: i % 2 ? '#ff8aba' : '#ffe29a',
+      }).setOrigin(0.5).setDepth(19).setAlpha(0.35 + Math.random() * 0.4);
+      this.tweens.add({ targets: spark, y: spark.y - 18, alpha: 0.12, duration: 1200 + i * 95, yoyo: true, repeat: -1 });
+    }
   }
 
   createSky() {

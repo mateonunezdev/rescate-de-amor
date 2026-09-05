@@ -42,6 +42,67 @@ body {
   background: var(--bg-deep);
 }
 
+#rotate-device {
+  display: none;
+}
+
+@media (orientation: portrait) and (max-width: 900px) {
+  #game {
+    visibility: hidden;
+  }
+
+  #rotate-device {
+    position: fixed;
+    inset: 0;
+    z-index: 100000;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 32px;
+    overflow: hidden;
+    color: #fff2d7;
+    text-align: center;
+    background:
+      radial-gradient(circle at 50% 42%, rgba(150, 48, 112, 0.34), transparent 34%),
+      linear-gradient(180deg, #090616 0%, #1d0d2a 100%);
+  }
+
+  #rotate-device::before,
+  #rotate-device::after {
+    content: "♥";
+    position: absolute;
+    color: rgba(255, 104, 172, 0.28);
+    font: 52px monospace;
+  }
+
+  #rotate-device::before { left: 12%; top: 18%; }
+  #rotate-device::after { right: 12%; bottom: 18%; }
+
+  .rotate-device__icon {
+    display: grid;
+    width: 90px;
+    height: 90px;
+    place-items: center;
+    border: 3px solid #f4c870;
+    color: #ff78b4;
+    font: 58px/1 monospace;
+    box-shadow: 0 0 28px rgba(255, 97, 171, 0.24);
+  }
+
+  #rotate-device strong {
+    font: 700 24px/1.2 monospace;
+    text-shadow: 3px 3px 0 #591d4a;
+  }
+
+  #rotate-device > span:last-child {
+    max-width: 280px;
+    color: #dfcfe2;
+    font: 16px/1.5 monospace;
+  }
+}
+
 canvas {
   display: block;
   image-rendering: pixelated;

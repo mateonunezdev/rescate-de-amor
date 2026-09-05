@@ -15,7 +15,7 @@ export default class UIManager {
   createHud() {
     this.container = this.scene.add.container(24, 18).setScrollFactor(0).setDepth(1000);
     this.container.setName('player-hud');
-    this.container.setScale(this.scene.scale.width<900 ? .78 : .88);
+    this.container.setScale(0.9);
 
     const bg = this.scene.add.rectangle(0, 0, 370, 112, 0x160d24, 0.96).setStrokeStyle(3, 0xf2c46f, 0.9);
     bg.setOrigin(0, 0);
@@ -52,19 +52,19 @@ export default class UIManager {
   showNextMessage() {
     if (this.activeMessage?.active || !this.messageQueue.length) return;
     const { text, color, duration } = this.messageQueue.shift();
-    const msg = this.scene.add.text(this.scene.scale.width / 2, this.scene.scale.height / 2 - 40, text, {
+    const msg = this.scene.add.text(this.scene.scale.width / 2, 112, text, {
       fontFamily: 'monospace',
-      fontSize: '22px',
+      fontSize: '16px',
       color,
-      backgroundColor: 'rgba(18, 12, 28, 0.7)',
-      padding: { left: 18, right: 18, top: 8, bottom: 8 },
+      backgroundColor: 'rgba(18, 12, 28, 0.9)',
+      padding: { left: 14, right: 14, top: 7, bottom: 7 },
     }).setOrigin(0.5).setScrollFactor(0).setDepth(1100);
     this.activeMessage = msg;
 
     this.scene.tweens.add({
       targets: msg,
       alpha: 0,
-      y: msg.y - 30,
+      y: msg.y - 16,
       duration,
       onComplete: () => {
         msg.destroy();

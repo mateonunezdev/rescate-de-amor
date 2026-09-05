@@ -32,6 +32,9 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
 
     this.cursors = scene.input.keyboard.createCursorKeys();
     this.keys = scene.input.keyboard.addKeys('A,D,S,W,SHIFT,SPACE,X,K,Z,J,C,L,E,V,Q');
+    this.virtualInput = Object.create(null);
+    this.virtualPressed = new Set();
+    this.virtualReleased = new Set();
     this.attackCooldown = 0;this.shieldActive=0;this.shieldCooldown=0;this.shieldDuration=1800;this.shieldCooldownMax=6500;this.shieldFx=null;
     this.loveCharge=0;this.chargeFxTimer=0;this.comboStep=0;this.comboTimer=0;this.airSlamming=false;this.specialCooldown=0;this.combatPoseUntil=0;this.combatPoseFrame=7;this.dashCooldown=0;this.dashTime=0;this.dashTrailTimer=0;
   }
@@ -39,17 +42,19 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
   update(time, delta) {
     if (!this.active || !this.body) return;
 
-    const left = this.keys.A.isDown || this.cursors.left.isDown;
-    const right = this.keys.D.isDown || this.cursors.right.isDown;
+    const consumePress = action => this.virtualPressed.delete(action);
+    const consumeRelease = action => this.virtualReleased.delete(action);
+    const left = this.keys.A.isDown || this.cursors.left.isDown || this.virtualInput.left;
+    const right = this.keys.D.isDown || this.cursors.right.isDown || this.virtualInput.right;
     const run = this.keys.SHIFT.isDown;
     const crouch = this.keys.S.isDown || this.cursors.down.isDown;
-    const jumpPressed = Phaser.Input.Keyboard.JustDown(this.keys.SPACE) || Phaser.Input.Keyboard.JustDown(this.keys.W) || Phaser.Input.Keyboard.JustDown(this.cursors.up);
-    const attackPressed = Phaser.Input.Keyboard.JustDown(this.keys.X)||Phaser.Input.Keyboard.JustDown(this.keys.K);
-    const attackReleased = Phaser.Input.Keyboard.JustUp(this.keys.X)||Phaser.Input.Keyboard.JustUp(this.keys.K);
-    const meleePressed = Phaser.Input.Keyboard.JustDown(this.keys.Z)||Phaser.Input.Keyboard.JustDown(this.keys.J);
-    const specialPressed = Phaser.Input.Keyboard.JustDown(this.keys.C)||Phaser.Input.Keyboard.JustDown(this.keys.L);
-    const shieldPressed = Phaser.Input.Keyboard.JustDown(this.keys.V);
-    const dashPressed=Phaser.Input.Keyboard.JustDown(this.keys.SHIFT)||Phaser.Input.Keyboard.JustDown(this.keys.Q);
+    const jumpPressed = Phaser.Input.Keyboard.JustDown(this.keys.SPACE) || Phaser.Input.Keyboard.JustDown(this.keys.W) || Phaser.Input.Keyboard.JustDown(this.cursors.up) || consumePress('jump');
+    const attackPressed = Phaser.Input.Keyboard.JustDown(this.keys.X)||Phaser.Input.Keyboard.JustDown(this.keys.K)||consumePress('ranged');
+    const attackReleased = Phaser.Input.Keyboard.JustUp(this.keys.X)||Phaser.Input.Keyboard.JustUp(this.keys.K)||consumeRelease('ranged');
+    const meleePressed = Phaser.Input.Keyboard.JustDown(this.keys.Z)||Phaser.Input.Keyboard.JustDown(this.keys.J)||consumePress('melee');
+    const specialPressed = Phaser.Input.Keyboard.JustDown(this.keys.C)||Phaser.Input.Keyboard.JustDown(this.keys.L)||consumePress('special');
+    const shieldPressed = Phaser.Input.Keyboard.JustDown(this.keys.V)||consumePress('shield');
+    const dashPressed=Phaser.Input.Keyboard.JustDown(this.keys.SHIFT)||Phaser.Input.Keyboard.JustDown(this.keys.Q)||consumePress('dash');
 
     if (jumpPressed) {
       this.jumpBufferTimer = this.jumpBufferWindow;
@@ -103,7 +108,7 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     if(meleePressed&&!this.isGrounded&&this.body.velocity.y>20&&!this.airSlamming){this.airSlamming=true;this.setVelocityY(760);this.scene.startAirSlam?.(this.x,this.y);}
     else if(meleePressed&&this.attackCooldown<=0){this.comboStep=this.comboTimer>0?(this.comboStep%3)+1:1;this.comboTimer=520;this.attackCooldown=this.comboStep===3?300:150;this.scene.meleeAttack?.(this.x,this.y,this.facing,this.comboStep);}
     if (attackPressed && this.attackCooldown <= 0) { this.attackCooldown = 330; this.scene.fireLove?.(this.x + this.facing * 31, this.y + 10, this.facing); }
-    if((this.keys.X.isDown||this.keys.K.isDown)&&this.canChargeLove){this.loveCharge=Math.min(1100,this.loveCharge+delta);this.chargeFxTimer-=delta;if(this.chargeFxTimer<=0){this.chargeFxTimer=120;this.scene.particleManager?.sparkles(this.x,this.y,0xff72b8,3);if(this.loveCharge>650)this.setTint(0xff8fc8);}}
+    if((this.keys.X.isDown||this.keys.K.isDown||this.virtualInput.ranged)&&this.canChargeLove){this.loveCharge=Math.min(1100,this.loveCharge+delta);this.chargeFxTimer-=delta;if(this.chargeFxTimer<=0){this.chargeFxTimer=120;this.scene.particleManager?.sparkles(this.x,this.y,0xff72b8,3);if(this.loveCharge>650)this.setTint(0xff8fc8);}}
     if(attackReleased){if(this.canChargeLove&&this.loveCharge>=900){this.attackCooldown=700;this.scene.fireChargedLove?.(this.x+this.facing*26,this.y-5,this.facing);}this.loveCharge=0;}
     if(specialPressed&&this.specialCooldown<=0&&this.scene.useSpecial?.(this.x,this.y)){this.specialCooldown=9000;}
     if(this.airSlamming&&this.isGrounded){this.airSlamming=false;this.scene.airSlamImpact?.(this.x,this.y);}
@@ -120,6 +125,13 @@ export default class Player extends Phaser.Physics.Arcade.Sprite {
     this.setScale(this.baseScale);
 
     this.setFlipX(this.facing < 0);
+  }
+
+  setVirtualInput(action, isDown) {
+    const wasDown = !!this.virtualInput[action];
+    if (isDown && !wasDown) this.virtualPressed.add(action);
+    if (!isDown && wasDown) this.virtualReleased.add(action);
+    this.virtualInput[action] = isDown;
   }
 
   jump() {

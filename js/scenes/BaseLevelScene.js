@@ -1,7 +1,7 @@
-import Player from '../entities/Player.js?v=20260904-final-qa-01';
+import Player from '../entities/Player.js?v=20260905-elite-eco-01';
 import Enemy from '../entities/Enemy.js?v=20260904-final-qa-01';
 import Collectible from '../entities/Collectible.js?v=20260902-level1-gold-01';
-import UIManager from '../ui/UIManager.js?v=20260902-professional-polish-13';
+import UIManager from '../ui/UIManager.js?v=20260905-elite-eco-01';
 import AudioManager from '../systems/AudioManager.js';
 import ParticleManager from '../systems/ParticleManager.js';
 import SaveManager from '../systems/SaveManager.js';
@@ -45,7 +45,7 @@ export default class BaseLevelScene extends Phaser.Scene {
     this.physics.add.collider(this.player, this.solids);
     this.makeHazards();
     this.cameras.main.setBounds(0, 0, this.dataDef.width, this.dataDef.height||720).startFollow(this.player, true, 0.09, 0.09).setDeadzone(180, 100).centerOn(spawn.x,spawn.y);
-    this.uiManager = new UIManager(this);if(this.scene.key==='Level1Scene'){this.uiManager.container?.setScale(.74);this.uiManager.rosesText?.setAlpha(.58).setScale(.82);this.uiManager.lettersText?.setAlpha(.58).setScale(.82);}this.refreshHud();this.makeNarrativeMoment();if(this.scene.key==='Level1Scene')this.makeLevel1Reactivity();
+    this.uiManager = new UIManager(this);this.refreshHud();this.makeNarrativeMoment();if(this.scene.key==='Level1Scene')this.makeLevel1Reactivity();
     this.projectiles = this.physics.add.group({ allowGravity: false });
     this.enemies = this.physics.add.group();
     this.dataDef.enemies.forEach(e => { const enemy=new Enemy(this,e.x,e.y,e);this.spawnEnemyOnSurface(enemy,e.surface);this.enemies.add(enemy); });
@@ -57,7 +57,7 @@ export default class BaseLevelScene extends Phaser.Scene {
     this.makeCollectibles(); this.makeCheckpoint(); this.makeLevelPuzzle(); this.makeCombatArenas(); this.makeExit(); this.makePause(); this.makeMobileControls();this.validateDamageSources();this.makeQaPanel(debugQuery);
     this.events.on('player-hit', () => { gameState.health = this.player.health; this.refreshHud(); });
     this.events.on('game-over', () => this.showGameOver());
-    this.presentationReady=false;this.time.delayedCall(3200,()=>{this.presentationReady=true;});const levelTitle=this.add.text(640,205,`${this.dataDef.title}\n\n${this.dataDef.objective}`,{fontFamily:'monospace',fontSize:'20px',color:'#ffe4ac',align:'center',lineSpacing:7,stroke:'#28152f',strokeThickness:5,backgroundColor:'#160d24',padding:{x:22,y:14}}).setOrigin(.5).setScrollFactor(0).setDepth(1200);this.tweens.add({targets:levelTitle,alpha:0,y:185,duration:600,delay:2600,onComplete:()=>levelTitle.destroy()});
+    this.presentationReady=false;this.time.delayedCall(3200,()=>{this.presentationReady=true;});const levelTitle=this.add.text(820,58,`${this.dataDef.title}\n${this.dataDef.objective}`,{fontFamily:'monospace',fontSize:'15px',color:'#ffe4ac',align:'center',lineSpacing:5,stroke:'#28152f',strokeThickness:3,backgroundColor:'#160d24e8',padding:{x:18,y:10},wordWrap:{width:700}}).setOrigin(.5).setScrollFactor(0).setDepth(1200);this.tweens.add({targets:levelTitle,alpha:0,y:46,duration:500,delay:2600,onComplete:()=>levelTitle.destroy()});
     this.sectionMarkers=(this.dataDef.sections||[]).map(s=>({...s,shown:false}));
     if(this.scene.key==='Level1Scene')this.level1Tutorial={attack:false,flight:false};
   }
@@ -278,9 +278,9 @@ export default class BaseLevelScene extends Phaser.Scene {
     this.tweens.add({targets:[glow,arch],alpha:{from:this.dataDef.theme==='forest'?.72:.65,to:1},duration:850,yoyo:true,repeat:-1,ease:'Sine.easeInOut'});
     this.exitPrompt=this.add.text(x,y-190,'E / ↑  CONTINUAR',{fontFamily:'monospace',fontSize:'17px',color:'#fff7cf',backgroundColor:'#481b49',padding:{x:12,y:7},stroke:'#210f28',strokeThickness:2}).setOrigin(.5).setDepth(60).setVisible(false);
     this.exitLockedText=this.add.text(x,surfaceTop-155,'🔒 CARTA DEL NIVEL NECESARIA\nAlgo importante quedó atrás…',{fontFamily:'monospace',fontSize:'12px',color:'#e6b4cc',align:'center',backgroundColor:'#211328',padding:{x:8,y:5}}).setOrigin(.5).setDepth(31).setVisible(false);
-    const tryExit=()=>{if(this.exitNearby&&this.exitAvailable)this.finishLevel();};
+    const tryExit=()=>{if(this.exitNearby&&this.exitAvailable)this.finishLevel();};this.tryExit=tryExit;
     this.input.keyboard.on('keydown-E',tryExit);this.input.keyboard.on('keydown-UP',tryExit);
-    this.events.once('shutdown',()=>{this.input.keyboard.off('keydown-E',tryExit);this.input.keyboard.off('keydown-UP',tryExit);});
+    this.events.once('shutdown',()=>{this.input.keyboard.off('keydown-E',tryExit);this.input.keyboard.off('keydown-UP',tryExit);this.tryExit=null;});
     this.updateExitState();
   }
   updateExitState(){
@@ -294,12 +294,29 @@ export default class BaseLevelScene extends Phaser.Scene {
   makePause(){ this.input.keyboard.on('keydown-ESC',()=>this.togglePause()); }
   togglePause(){ if(this.gameOver||this.finishing||this.interactionLocked||this.cardPickupInProgress)return; this.paused=!this.paused; if(this.paused){this.physics.pause();this.pauseUi=this.add.container(0,0).setScrollFactor(0).setDepth(500);const bg=this.add.rectangle(640,360,520,390,0x180d25,.97).setStrokeStyle(5,0xf3c66b);const title=this.add.text(640,220,'PAUSA',{fontFamily:'monospace',fontSize:'40px',color:'#ffe4a5'}).setOrigin(.5);this.pauseUi.add([bg,title]);[['CONTINUAR',290,()=>this.togglePause()],['REINICIAR CHECKPOINT',350,()=>this.scene.restart()],['CONTROLES',410,()=>this.uiManager.showMessage('A/D mover · SPACE saltar · Z combo · X energía · V escudo · ESC pausa','white',2400)],['MENÚ PRINCIPAL',470,()=>this.scene.start('MenuScene')]].forEach(([t,y,fn])=>{const b=this.add.text(640,y,t,{fontFamily:'monospace',fontSize:'20px',color:'#ffeaf6',backgroundColor:'#472746',padding:{x:18,y:10}}).setOrigin(.5).setInteractive({useHandCursor:true}).on('pointerdown',fn);this.pauseUi.add(b);});}else{this.pauseUi?.destroy();this.pauseUi=null;this.physics.resume();} }
   showGameOver(){ if(this.gameOver)return;this.gameOver=true;this.physics.pause();this.add.rectangle(640,360,1280,720,0x090612,.84).setScrollFactor(0).setDepth(600);this.add.text(640,290,'Todavía no puedo rendirme.',{fontFamily:'monospace',fontSize:'29px',color:'#ffe0ef'}).setOrigin(.5).setScrollFactor(0).setDepth(601);[['REINTENTAR DESDE CHECKPOINT',390,()=>this.scene.restart()],['MENÚ',455,()=>this.scene.start('MenuScene')]].forEach(([t,y,f])=>this.add.text(640,y,t,{fontFamily:'monospace',fontSize:'22px',color:'#fff',backgroundColor:'#6d2d58',padding:{x:20,y:12}}).setOrigin(.5).setScrollFactor(0).setDepth(602).setInteractive().on('pointerdown',f)); }
-  makeMobileControls(){if(!this.sys.game.device.input.touch)return;this.input.addPointer(6);const bind=(label,x,key)=>{const button=this.add.text(x,640,label,{fontFamily:'monospace',fontSize:'28px',color:'#fff',backgroundColor:'#55294f',padding:{x:11,y:10}}).setOrigin(.5).setScrollFactor(0).setDepth(1250).setAlpha(.82).setInteractive();const down=()=>{key.isDown=true;key._justDown=true;button.setAlpha(1);},up=()=>{key.isDown=false;key._justUp=true;button.setAlpha(.82);};button.on('pointerdown',down).on('pointerup',up).on('pointerout',up).on('pointerupoutside',up);return button;};bind('◀',62,this.player.keys.A);bind('▶',138,this.player.keys.D);bind('↑',930,this.player.keys.SPACE);bind('⚔',1005,this.player.keys.Z);bind('♥',1080,this.player.keys.X);bind('➜',1155,this.player.keys.Q);bind('◯',1230,this.player.keys.V);}
+  makeMobileControls(){
+    if(!this.sys.game.device.input.touch)return;
+    this.input.addPointer(8);
+    const bind=(label,x,action,help,onPress=null)=>{
+      const button=this.add.text(x,646,label,{fontFamily:'monospace',fontSize:'30px',fontStyle:'bold',color:'#fff',backgroundColor:'#55294f',padding:{x:15,y:12}}).setName(`mobile-control-${help}`).setOrigin(.5).setScrollFactor(0).setDepth(1250).setAlpha(.56).setInteractive({useHandCursor:true});
+      const down=()=>{if(onPress)onPress();else this.player.setVirtualInput(action,true);button.setAlpha(1).setScale(1.06);};
+      const up=()=>{if(!onPress)this.player.setVirtualInput(action,false);button.setAlpha(.56).setScale(1);};
+      button.on('pointerdown',down).on('pointerup',up).on('pointerout',up).on('pointerupoutside',up);
+      return button;
+    };
+    bind('◀',58,'left','left');bind('▶',138,'right','right');bind('↑',838,'jump','jump');bind('⚔',920,'melee','melee');bind('♥',1002,'ranged','ranged');bind('➜',1084,'dash','dash');bind('◯',1166,'shield','shield');bind('E',1240,null,'interact',()=>this.handleMobileInteract());
+    if(this.scene.key==='Level1Scene')this.mobilePuzzleButtons=['1','2','3','4'].map((answer,index)=>bind(answer,500+index*76,null,`answer-${answer}`,()=>this.answerMemoryPuzzle(answer)).setFontSize(24).setVisible(false));
+  }
+  handleMobileInteract(){
+    if(this.scene.key==='Level2Scene')this.activateGardenSymbol();
+    else if(this.scene.key==='Level4Scene'||this.scene.key==='Level5Scene')this.activateWorldSymbol();
+    this.tryExit?.();
+  }
   update(time,delta){
     if(!this.player||this.paused||this.interactionLocked||this.gameOver)return;this.player.update(time,delta);this.updateNarrativeMoment();if(this.scene.key==='Level1Scene'){this.updateLevel1Reactivity();if(this.presentationReady&&!this.level1Tutorial.attack&&this.player.x>430){this.level1Tutorial.attack=true;this.uiManager.showMessage('Z / J · ATAQUE','#ffe7ad',1500);}if(this.presentationReady&&!this.level1Tutorial.flight&&this.player.x>900){this.level1Tutorial.flight=true;this.uiManager.showMessage('X / K · CORAZÓN   ·   SHIFT · ESQUIVAR/CORRER','#ffd6e8',1900);}}
     if(this.scene.key==='Level1Scene'&&!this.level1Story.colorRestored&&(gameState.memories||[]).includes('l1-first-date')){this.level1Story.colorRestored=true;this.cameras.main.flash(420,115,175,135,false);this.cameras.main.setBackgroundColor('#152445');}
     if(this.presentationReady)this.sectionMarkers?.forEach(section=>{if(!section.shown&&this.player.x>=section.x){section.shown=true;this.uiManager.showMessage(section.label,'#ffe6af',1500);}});
-    if(!this.puzzleSolved){if(this.scene.key==='Level1Scene'){this.puzzleActive=Math.abs(this.player.x-this.puzzleX)<150;this.puzzlePrompt.setVisible(this.puzzleActive);}else if(this.scene.key==='Level2Scene'){const near=this.puzzleSymbols?.some(s=>!s.active&&Math.abs(this.player.x-s.x)<90);this.puzzlePrompt.setVisible(!!near).setText('E · ACTIVAR RECUERDO');}else if(this.scene.key==='Level3Scene'){this.puzzlePrompt.setVisible(Math.abs(this.player.x-this.puzzleX)<170).setText(`RUNAS RECUPERADAS · ${this.runesCollected}/3`);}else{const near=this.puzzleSymbols?.some(s=>!s.active&&Phaser.Math.Distance.Between(this.player.x,this.player.y,s.x,s.y)<105);this.puzzlePrompt.setVisible(!!near).setText(`E · ACTIVAR ${this.dataDef.puzzleType==='hearts'?'CORAZÓN':'TOMO'}`);}}else this.puzzlePrompt?.setVisible(false);
+    if(!this.puzzleSolved){if(this.scene.key==='Level1Scene'){this.puzzleActive=Math.abs(this.player.x-this.puzzleX)<150;this.puzzlePrompt.setVisible(this.puzzleActive);this.mobilePuzzleButtons?.forEach(button=>button.setVisible(this.puzzleActive));}else if(this.scene.key==='Level2Scene'){const near=this.puzzleSymbols?.some(s=>!s.active&&Math.abs(this.player.x-s.x)<90);this.puzzlePrompt.setVisible(!!near).setText('E · ACTIVAR RECUERDO');}else if(this.scene.key==='Level3Scene'){this.puzzlePrompt.setVisible(Math.abs(this.player.x-this.puzzleX)<170).setText(`RUNAS RECUPERADAS · ${this.runesCollected}/3`);}else{const near=this.puzzleSymbols?.some(s=>!s.active&&Phaser.Math.Distance.Between(this.player.x,this.player.y,s.x,s.y)<105);this.puzzlePrompt.setVisible(!!near).setText(`E · ACTIVAR ${this.dataDef.puzzleType==='hearts'?'CORAZÓN':'TOMO'}`);}}else{this.puzzlePrompt?.setVisible(false);this.mobilePuzzleButtons?.forEach(button=>button.setVisible(false));}
     if(this.encounterDialogue&&!this.encounterDialogue.shown&&Math.abs(this.player.x-this.encounterDialogue.target.x)<390)this.startEncounterDialogue();
     this.combatArenas?.forEach(a=>{if(!a.started&&this.player.x>a.start+70&&this.player.x<a.end)this.startCombatArena(a);this.updateCombatArena(a);});
     this.cameras.main.setFollowOffset(Phaser.Math.Linear(this.cameras.main.followOffset.x,-this.player.body.velocity.x*.12,.035),Phaser.Math.Linear(this.cameras.main.followOffset.y,this.player.body.velocity.y<0?28:0,.035));this.updateExitState();this.enemies?.getChildren().forEach(e=>{const entryGrace=this.time.now<this.entryGraceUntil&&this.player.x<this.entrySafeX;if(this.presentationReady&&!entryGrace)e.update(delta);else{e.setVelocityX(0);e.damageActive=false;e.releaseAttackSlot?.();e.aggroUntil=0;}this.keepEnemyGrounded(e);e.syncHealthHud?.();e.safetyTimer=(e.safetyTimer||0)-delta;if(e.safetyTimer<=0){e.safetyTimer=500;if(e.active&&e.visible&&e.y>(this.dataDef.height||720)+80&&e.safeSpawn){e.setPosition(e.safeSpawn.x,e.safeSpawn.y);e.setVelocity(0);e.body.enable=true;e.body.updateFromGameObject();}}});
